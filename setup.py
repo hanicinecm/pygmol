@@ -19,7 +19,7 @@ setup(
         "Development Status :: 1 - Planning",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Physics",
-        "Topic :: Scientific/Engineering :: Chemistry"
+        "Topic :: Scientific/Engineering :: Chemistry",
         "Topic :: Scientific/Engineering :: Astronomy",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
