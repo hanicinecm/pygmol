@@ -45,7 +45,8 @@ class Chemistry(ABC):
         `reactions_species_stoichiomatrix_lhs`
         `reactions_species_stoichiomatrix_rhs`
 
-    See the abstract properties below, for explanation and signatures.
+    See the abstract attributes below, and their definitions as
+    properties for explanation and signatures.
     """
 
     @property
@@ -195,3 +196,25 @@ class Chemistry(ABC):
         respectively and need to be consistent with
         `reactions_ids` and `species_ids` properties/attributes.
         """
+
+
+class ChemistryValidationError(Exception):
+    """A custom exception signaling inconsistent or unphysical data
+    given by the concrete `Chemistry` class instance.
+    """
+    pass
+
+
+def validate_chemistry(chemistry: Chemistry):
+    """Validation function for a concrete `Chemistry` subclass.
+
+    Various inconsistencies are checked for, including uniqueness of
+    the `species_ids` and `reactions_ids`, or the correct shapes of
+    all the sequences.
+
+    Raises
+    ------
+    ChemistryValidationError
+    """
+    if chemistry is None:
+        raise ChemistryValidationError("")

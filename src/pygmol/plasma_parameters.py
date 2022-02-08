@@ -1,5 +1,8 @@
-from typing import Union, Sequence, Dict
+"""Module containing the PlasmaParameters wrapper class handling the
+validation and sanitisation of parameters passed to the global model.
+"""
 import numbers
+from typing import Union, Sequence, Dict
 
 import pydantic
 
