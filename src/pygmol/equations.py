@@ -158,40 +158,62 @@ class Equations(object):
         # ***************************************** CHEMISTRY ******************************************************** #
         # species attributes:
         self.species_name = np.array(chemistry.get_species_name())
-        self.species_charge = np.array(chemistry.get_species_charge())  # species charges in elementary charges
-        self.species_mass = np.array(chemistry.get_species_mass()) * constants.atomic_mass  # species mass in [kg]
-        self.species_lj_sigma = np.array(chemistry.get_species_lj_sigma()) * 1.e-10  # Lennard-Jones sigma in [m]
+        self.species_charge = np.array(
+            chemistry.get_species_charge()
+        )  # species charges in elementary charges
+        self.species_mass = (
+            np.array(chemistry.get_species_mass()) * constants.atomic_mass
+        )  # species mass in [kg]
+        self.species_lj_sigma = (
+            np.array(chemistry.get_species_lj_sigma()) * 1.0e-10
+        )  # Lennard-Jones sigma in [m]
         self.species_stick_coef = np.array(chemistry.get_species_stick_coef())
         self.num_species = len(self.species_name)
         # reactions attributes:
-        self.reactions_arrh_a = np.array(chemistry.get_reactions_arrh_a())  # arrhenius pre-exp. factor in [SI]
-        self.reactions_arrh_b = np.array(chemistry.get_reactions_arrh_b())  # arrhenius n-factor
-        self.reactions_arrh_c = np.array(chemistry.get_reactions_arrh_c())  # arrhenius activation en [eV] or [K]
-        self.reactions_el_en_loss = np.array(chemistry.get_reactions_el_en_loss())  # [eV] for inelastic collisions
+        self.reactions_arrh_a = np.array(
+            chemistry.get_reactions_arrh_a()
+        )  # arrhenius pre-exp. factor in [SI]
+        self.reactions_arrh_b = np.array(
+            chemistry.get_reactions_arrh_b()
+        )  # arrhenius n-factor
+        self.reactions_arrh_c = np.array(
+            chemistry.get_reactions_arrh_c()
+        )  # arrhenius activation en [eV] or [K]
+        self.reactions_el_en_loss = np.array(
+            chemistry.get_reactions_el_en_loss()
+        )  # [eV] for inelastic collisions
         self.num_reactions = len(self.reactions_arrh_a)
 
-        self.stoichiovector_electron_net = np.array(chemistry.get_reactions_stoich_coefs_electron(method='net'))
-        self.stoichiovector_electron_lhs = np.array(chemistry.get_reactions_stoich_coefs_electron(method='lhs'))
-        self.stoichiovector_arbitrary_lhs = np.array(chemistry.get_reactions_stoich_coefs_arbitrary(method='lhs'))
+        self.stoichiovector_electron_net = np.array(
+            chemistry.get_reactions_stoich_coefs_electron(method="net")
+        )
+        self.stoichiovector_electron_lhs = np.array(
+            chemistry.get_reactions_stoich_coefs_electron(method="lhs")
+        )
+        self.stoichiovector_arbitrary_lhs = np.array(
+            chemistry.get_reactions_stoich_coefs_arbitrary(method="lhs")
+        )
 
         # multi-d attributes:
         self.return_matrix = np.array(chemistry.get_return_matrix())
-        self.stoichiomatrix_net = np.array(chemistry.get_stoichiomatrix(method='net'))
-        self.stoichiomatrix_lhs = np.array(chemistry.get_stoichiomatrix(method='lhs'))
+        self.stoichiomatrix_net = np.array(chemistry.get_stoichiomatrix(method="net"))
+        self.stoichiomatrix_lhs = np.array(chemistry.get_stoichiomatrix(method="lhs"))
         # stoich matrix of LHS for all reactions only with 1st col electrons and last columns arbitrary_sp 'M'
         self.stoichiomatrix_reactants_lhs = np.c_[
-            self.stoichiovector_electron_lhs, self.stoichiomatrix_lhs, self.stoichiovector_arbitrary_lhs
+            self.stoichiovector_electron_lhs,
+            self.stoichiomatrix_lhs,
+            self.stoichiovector_arbitrary_lhs,
         ]
 
         # ***************************************** MODEL PARAMETERS ************************************************* #
-        self.feeds = model_params['feeds']  # dict with species names as keys
-        self.temp_g = model_params['temp_gas']
-        self.r, self.z = model_params['radius'], model_params['length']
-        self.p0 = model_params['pressure']
-        self.t_end = model_params['t_end']
+        self.feeds = model_params["feeds"]  # dict with species names as keys
+        self.temp_g = model_params["temp_gas"]
+        self.r, self.z = model_params["radius"], model_params["length"]
+        self.p0 = model_params["pressure"]
+        self.t_end = model_params["t_end"]
 
-        self.pow = np.array(model_params['power'])
-        self.t_pow = np.array(model_params['t_power'])
+        self.pow = np.array(model_params["power"])
+        self.t_pow = np.array(model_params["t_power"])
 
         # adjust repeated values in P_t, since P_t needs to be strictly ascending - need to make it continuous func
         d_t = 0.00001 * self.t_end
@@ -199,16 +221,24 @@ class Equations(object):
             if self.t_pow[i] == self.t_pow[i + 1]:
                 self.t_pow[i] -= d_t
                 self.t_pow[i + 1] += d_t
-        assert np.array_equal(self.t_pow, sorted(self.t_pow)), 'Time points for power definition ill-defined!'
-        assert len(self.t_pow) == len(set(self.t_pow)), 'Time points for power definition ill-defined'
+        assert np.array_equal(
+            self.t_pow, sorted(self.t_pow)
+        ), "Time points for power definition ill-defined!"
+        assert len(self.t_pow) == len(
+            set(self.t_pow)
+        ), "Time points for power definition ill-defined"
         # I want the border points to be included so I don't need to handle extrapolations...
-        assert self.t_pow[0] <= 0. and self.t_pow[-1] >= self.t_end, 'The power definition needs to cover [0, t_end]'
+        assert (
+            self.t_pow[0] <= 0.0 and self.t_pow[-1] >= self.t_end
+        ), "The power definition needs to cover [0, t_end]"
         # treated as a non-constant power even if constant power defined e.g. by P=(1000, 1000), t_P=(-1e10, 1e10)
 
         # secondary and other model parameters:
-        self.volume = constants.pi * self.r ** 2 * self.z  # plasma volume in [m3]
+        self.volume = constants.pi * self.r**2 * self.z  # plasma volume in [m3]
         self.area = 2 * constants.pi * self.r * (self.r + self.z)
-        self.diff_l = ((constants.pi / self.z) ** 2 + (2.405 / self.r) ** 2) ** -0.5  # diffusion length in [m]
+        self.diff_l = (
+            (constants.pi / self.z) ** 2 + (2.405 / self.r) ** 2
+        ) ** -0.5  # diffusion length in [m]
 
         # ********************************************** OTHERS ****************************************************** #
         self.num_unknowns = self.num_species + 1
@@ -221,26 +251,36 @@ class Equations(object):
         self.mask_neg = self.species_charge < 0  # negative species
         self.mask_neu = self.species_charge == 0  # neutral species
         self.mask_ion = self.mask_pos | self.mask_neg  # ion species
-        self.mask_inl = np.array([sp in self.feeds for sp in self.species_name])  # feed gas species all species
+        self.mask_inl = np.array(
+            [sp in self.feeds for sp in self.species_name]
+        )  # feed gas species all species
 
         self.mask_elc = self.stoichiovector_electron_lhs > 0  # electron collisions
-        self.mask_els = np.array(chemistry.get_reactions_elastic())  # elastic collisions for all reactions
+        self.mask_els = np.array(
+            chemistry.get_reactions_elastic()
+        )  # elastic collisions for all reactions
 
         # ************************  STATIC QUANTITIES EXTRACTED FROM THE CHEMISTRY  ********************************** #
         # feed flows in [sccm]
         self.feed_flows = np.array(
-            [self.feeds[sp] if sp in self.feeds else 0. for sp in self.species_name]
+            [self.feeds[sp] if sp in self.feeds else 0.0 for sp in self.species_name]
         )
         self.feed_flow_tot = np.sum(self.feed_flows)  # total gas flow in [sccm]
 
         # masses of collision partners in [kg] (for elastic collisions electron energy losses)
-        self.col_partner_masses = np.zeros(self.num_reactions)  # defined for elastic collision only
+        self.col_partner_masses = np.zeros(
+            self.num_reactions
+        )  # defined for elastic collision only
         for j in range(self.num_reactions):
-            if self.mask_elc[j] and self.mask_els[j]:  # only define for elastic electron processes, else 0.
+            if (
+                self.mask_elc[j] and self.mask_els[j]
+            ):  # only define for elastic electron processes, else 0.
                 stoichiovector_lhs = self.stoichiomatrix_lhs[j]
                 collision_partners_masses = self.species_mass[stoichiovector_lhs > 0]
                 if not len(collision_partners_masses):
-                    raise ValueError('The elastic reaction if={} does not have a collision partner')
+                    raise ValueError(
+                        "The elastic reaction if={} does not have a collision partner"
+                    )
                 preference_collision_partner_mass = collision_partners_masses[0]
                 self.col_partner_masses[j] = preference_collision_partner_mass
 
@@ -250,49 +290,91 @@ class Equations(object):
         self.reduced_mass = m_i * m_k / (m_i + m_k)
 
         # mean mass of ions (used in the formula for the sheath voltage)
-        self.mean_ion_mass = self.species_mass[self.mask_pos].mean() if any(self.mask_pos) else np.nan
+        self.mean_ion_mass = (
+            self.species_mass[self.mask_pos].mean() if any(self.mask_pos) else np.nan
+        )
         # static part of the sheath voltage formula (sheath voltage per 1eV of electron temperature)
-        self.sheath_voltage_factor = np.log((self.mean_ion_mass / (2 * constants.pi * constants.m_e)) ** 0.5)
+        self.sheath_voltage_factor = np.log(
+            (self.mean_ion_mass / (2 * constants.pi * constants.m_e)) ** 0.5
+        )
 
         # **************************************  DYNAMIC QUANTITIES  ************************************************ #
         # electron energy losses
-        self.el_en_loss = np.array(self.reactions_el_en_loss)  # those stay static, the elastic losses change
+        self.el_en_loss = np.array(
+            self.reactions_el_en_loss
+        )  # those stay static, the elastic losses change
         # reaction rate coefficients:
         self.k_r = np.empty(self.num_reactions)
-        self.k_r[~self.mask_elc] = \
-            self.reactions_arrh_a[~self.mask_elc] * (self.temp_g / 300) ** self.reactions_arrh_b[~self.mask_elc] * \
-            np.e ** (-self.reactions_arrh_c[~self.mask_elc] / self.temp_g)  # this bit stays static
+        self.k_r[~self.mask_elc] = (
+            self.reactions_arrh_a[~self.mask_elc]
+            * (self.temp_g / 300) ** self.reactions_arrh_b[~self.mask_elc]
+            * np.e ** (-self.reactions_arrh_c[~self.mask_elc] / self.temp_g)
+        )  # this bit stays static
         # mean velocities
         self.v_m = np.empty(self.num_species)
-        self.v_m[self.mask_neu] = \
-            (8 * constants.k * self.temp_g / (
-                    constants.pi * self.species_mass[self.mask_neu])) ** 0.5  # this stays static
+        self.v_m[self.mask_neu] = (
+            8
+            * constants.k
+            * self.temp_g
+            / (constants.pi * self.species_mass[self.mask_neu])
+        ) ** 0.5  # this stays static
         # scattering cross sections for sp-sp pair:
         # hard-sphere scattering xsecs seed [m2] - only should be defined for n-n and n-i collisions:
-        self.sigma_sc = (self.species_lj_sigma[:, np.newaxis] + self.species_lj_sigma[np.newaxis, :]) ** 2
-        self.sigma_sc[np.ix_(~self.mask_neu, ~self.mask_neu)] = np.nan  # placeholder for rutherford scattering
-        self.sigma_sc[np.diag(len(self.sigma_sc) * [True, ])] = 0.  # diagonal elements are zero - collisions with self
+        self.sigma_sc = (
+            self.species_lj_sigma[:, np.newaxis] + self.species_lj_sigma[np.newaxis, :]
+        ) ** 2
+        self.sigma_sc[
+            np.ix_(~self.mask_neu, ~self.mask_neu)
+        ] = np.nan  # placeholder for rutherford scattering
+        self.sigma_sc[
+            np.diag(
+                len(self.sigma_sc)
+                * [
+                    True,
+                ]
+            )
+        ] = 0.0  # diagonal elements are zero - collisions with self
         # are not contributing to diffusion of species
 
         # ****************************************** CONSISTENCY CHECKS ********************************************** #
         if not set(self.feeds).issubset(set(self.species_name)):
-            raise EquationsParametersConsistencyError('Feed species from the model parameters inconsistent with the '
-                                                      'chemistry!')
+            raise EquationsParametersConsistencyError(
+                "Feed species from the model parameters inconsistent with the "
+                "chemistry!"
+            )
         # check the shapes of all the chemistry getter methods:
-        for arr in (self.species_name, self.species_charge, self.species_mass, self.species_stick_coef,
-                    self.species_lj_sigma):
+        for arr in (
+            self.species_name,
+            self.species_charge,
+            self.species_mass,
+            self.species_stick_coef,
+            self.species_lj_sigma,
+        ):
             if len(arr) != self.num_species:
-                raise EquationsParametersConsistencyError('Inconsistent Chemistry arrays!')
-        for arr in (self.reactions_arrh_b, self.reactions_arrh_a, self.reactions_arrh_c, self.reactions_el_en_loss,
-                    self.mask_els, self.stoichiovector_electron_lhs, self.stoichiovector_electron_net,
-                    self.stoichiovector_arbitrary_lhs):
+                raise EquationsParametersConsistencyError(
+                    "Inconsistent Chemistry arrays!"
+                )
+        for arr in (
+            self.reactions_arrh_b,
+            self.reactions_arrh_a,
+            self.reactions_arrh_c,
+            self.reactions_el_en_loss,
+            self.mask_els,
+            self.stoichiovector_electron_lhs,
+            self.stoichiovector_electron_net,
+            self.stoichiovector_arbitrary_lhs,
+        ):
             if len(arr) != self.num_reactions:
-                raise EquationsParametersConsistencyError('Inconsistent Chemistry arrays!')
+                raise EquationsParametersConsistencyError(
+                    "Inconsistent Chemistry arrays!"
+                )
         for mat in (self.stoichiomatrix_lhs, self.stoichiomatrix_net):
             if mat.shape != (self.num_reactions, self.num_species):
-                raise EquationsParametersConsistencyError('Inconsistent Chemistry arrays!')
+                raise EquationsParametersConsistencyError(
+                    "Inconsistent Chemistry arrays!"
+                )
         if self.return_matrix.shape != (self.num_species, self.num_species):
-            raise EquationsParametersConsistencyError('Inconsistent Chemistry arrays!')
+            raise EquationsParametersConsistencyError("Inconsistent Chemistry arrays!")
 
     # ***************************************  HELPER FUNCTIONS  ***************************************************** #
 
@@ -359,7 +441,9 @@ class Equations(object):
             p = self.get_total_pressure(y)
 
         if p > self.mtorr:
-            temp_i = (0.5 * constants.e / constants.k - self.temp_g) / (p / self.mtorr) + self.temp_g
+            temp_i = (0.5 * constants.e / constants.k - self.temp_g) / (
+                p / self.mtorr
+            ) + self.temp_g
         else:
             temp_i = 0.5 * constants.e / constants.k
         return temp_i  # in [K]
@@ -393,7 +477,9 @@ class Equations(object):
             rho = self.get_electron_energy_density(y)
 
         temp_e = rho / n_e * 2 / 3
-        temp_g_ev = np.float64(self.temp_g * constants.k / constants.e)  # convert to np.float64 so it supports copy()
+        temp_g_ev = np.float64(
+            self.temp_g * constants.k / constants.e
+        )  # convert to np.float64 so it supports copy()
 
         # The gas temperature acts as a lower limit for the electron temperature
         temp_e = max(temp_e, temp_g_ev)
@@ -427,9 +513,11 @@ class Equations(object):
         if temp_e is None:
             temp_e = self.get_electron_temperature(y)
 
-        self.k_r[self.mask_elc] = \
-            self.reactions_arrh_a[self.mask_elc] * temp_e ** self.reactions_arrh_b[self.mask_elc] * \
-            np.e ** (-self.reactions_arrh_c[self.mask_elc] / temp_e)
+        self.k_r[self.mask_elc] = (
+            self.reactions_arrh_a[self.mask_elc]
+            * temp_e ** self.reactions_arrh_b[self.mask_elc]
+            * np.e ** (-self.reactions_arrh_c[self.mask_elc] / temp_e)
+        )
         return self.k_r
 
     def get_reaction_rates(self, y, n=None, n_e=None, n_tot=None, k_r=None):
@@ -457,7 +545,9 @@ class Equations(object):
         # density vector with the electron density (1st) and 'M' density (last)
         n_reactants = np.r_[n_e, n, n_tot]
         # product of all reactants densities for all reactions:
-        n_reactants_prod = np.prod(n_reactants[np.newaxis, :] ** self.stoichiomatrix_reactants_lhs, axis=1)
+        n_reactants_prod = np.prod(
+            n_reactants[np.newaxis, :] ** self.stoichiomatrix_reactants_lhs, axis=1
+        )
         rates = k_r * n_reactants_prod  # reaction rate for each reaction
         return rates
 
@@ -500,12 +590,19 @@ class Equations(object):
         # initialise the flow source/sink rates:
         source_flow = np.zeros(self.num_species)  # sources/sinks due to flow - in/out
         # loss rate due to the pressure regulation - only acting upon neutral species:
-        source_flow[self.mask_neu] -= (n[self.mask_neu] * (1 / t_flow) * (p - self.p0) / self.p0)
+        source_flow[self.mask_neu] -= (
+            n[self.mask_neu] * (1 / t_flow) * (p - self.p0) / self.p0
+        )
         # gain rate due to the inflow:
-        source_flow += self.feed_flows * 4.485E+17 / self.volume  # converting from sccm -> particles/sec -> m-3/sec
+        source_flow += (
+            self.feed_flows * 4.485e17 / self.volume
+        )  # converting from sccm -> particles/sec -> m-3/sec
         # loss rate due to outflow (sum is the same as the sum of inflow, distributed amongst neutral species)
-        source_flow[self.mask_neu] -= \
-            sum(self.feed_flows * 4.485E+17 / self.volume) * n[self.mask_neu] / sum(n[self.mask_neu])
+        source_flow[self.mask_neu] -= (
+            sum(self.feed_flows * 4.485e17 / self.volume)
+            * n[self.mask_neu]
+            / sum(n[self.mask_neu])
+        )
 
         return source_flow
 
@@ -522,8 +619,12 @@ class Equations(object):
             temp_i = self.get_ion_temperature(y)
 
         # mean speeds (therm.) - values for the neutrals are static, only need to update values for +/- ions
-        self.v_m[~self.mask_neu] = (8 * constants.k * temp_i / (
-                constants.pi * self.species_mass[~self.mask_neu])) ** 0.5
+        self.v_m[~self.mask_neu] = (
+            8
+            * constants.k
+            * temp_i
+            / (constants.pi * self.species_mass[~self.mask_neu])
+        ) ** 0.5
         return self.v_m
 
     def get_sigma_sc(self, y, v_m=None, debye_length=None):
@@ -543,15 +644,30 @@ class Equations(object):
             debye_length = self.get_debye_length(y)
 
         # classical distance of closest approach matrix for each ion-ion pair:
-        b_0_ii = \
-            constants.e ** 2 * \
-            abs(self.species_charge[~self.mask_neu, np.newaxis] * self.species_charge[np.newaxis, ~self.mask_neu]) / \
-            (2 * constants.pi * constants.epsilon_0) / \
-            (self.reduced_mass[np.ix_(~self.mask_neu, ~self.mask_neu)] * v_m[~self.mask_neu, np.newaxis] ** 2)
+        b_0_ii = (
+            constants.e**2
+            * abs(
+                self.species_charge[~self.mask_neu, np.newaxis]
+                * self.species_charge[np.newaxis, ~self.mask_neu]
+            )
+            / (2 * constants.pi * constants.epsilon_0)
+            / (
+                self.reduced_mass[np.ix_(~self.mask_neu, ~self.mask_neu)]
+                * v_m[~self.mask_neu, np.newaxis] ** 2
+            )
+        )
         # populate the dynamic part of the self.sigma_sc matrix: only values for ion-ion pairs:
-        self.sigma_sc[np.ix_(~self.mask_neu, ~self.mask_neu)] = \
-            constants.pi * b_0_ii ** 2 * np.log(2 * debye_length / b_0_ii)
-        self.sigma_sc[np.diag(len(self.sigma_sc) * [True, ])] = 0.  # diagonal elements are zero - collisions with self
+        self.sigma_sc[np.ix_(~self.mask_neu, ~self.mask_neu)] = (
+            constants.pi * b_0_ii**2 * np.log(2 * debye_length / b_0_ii)
+        )
+        self.sigma_sc[
+            np.diag(
+                len(self.sigma_sc)
+                * [
+                    True,
+                ]
+            )
+        ] = 0.0  # diagonal elements are zero - collisions with self
         # are not contributing to diffusion of species
         return self.sigma_sc
 
@@ -591,7 +707,9 @@ class Equations(object):
         diff_c_free = constants.pi / 8 * mfp * v_m
         return diff_c_free
 
-    def get_ambipolar_diffusivity_pos(self, y, n=None, n_e=None, temp_i=None, temp_e=None, diff_c_free=None):
+    def get_ambipolar_diffusivity_pos(
+        self, y, n=None, n_e=None, temp_i=None, temp_e=None, diff_c_free=None
+    ):
         """Method to calculate the coefficient of ambipolar diffusion for positive ions.
 
         :param y: (np.array) vector of features (n0, ..., nN, rho) of densities and electron energy density in
@@ -617,10 +735,13 @@ class Equations(object):
 
         gamma = temp_e * constants.e / constants.k / temp_i
         alpha = n[self.mask_neg].sum() / n_e
-        diff_free_pos = diff_c_free[self.mask_pos].mean()  # mean coefficient for positive ions free diffusion
+        diff_free_pos = diff_c_free[
+            self.mask_pos
+        ].mean()  # mean coefficient for positive ions free diffusion
         # NOTE: this only holds for alpha << mu_e/mu_i
-        diff_a_pos = diff_free_pos * (1 + gamma * (1 + 2 * alpha)) / (
-                1 + alpha * gamma)  # ambipolar diffusion coef for +ions
+        diff_a_pos = (
+            diff_free_pos * (1 + gamma * (1 + 2 * alpha)) / (1 + alpha * gamma)
+        )  # ambipolar diffusion coef for +ions
         return diff_a_pos
 
     # noinspection PyMethodMayBeStatic
@@ -657,7 +778,9 @@ class Equations(object):
             diff_a_neg = self.get_ambipolar_diffusivity_neg(y)
 
         diff_c = np.empty(self.num_species)
-        diff_c[self.mask_neu] = diff_c_free[self.mask_neu]  # diffusion coefficients for neutrals
+        diff_c[self.mask_neu] = diff_c_free[
+            self.mask_neu
+        ]  # diffusion coefficients for neutrals
         # populate diffusivities for ions with their ambipolar diffusion coefficients
         diff_c[self.mask_pos] = diff_a_pos
         diff_c[self.mask_neg] = diff_a_neg
@@ -695,11 +818,11 @@ class Equations(object):
 
         s = self.species_stick_coef
         if self.diffusion_model == 0:
-            return -diff_c * n * s / self.diff_l ** 2 * self.volume / self.area
+            return -diff_c * n * s / self.diff_l**2 * self.volume / self.area
         elif self.diffusion_model == 1:
             return -diff_c * n * s / (s * self.diff_l + (4 * diff_c / v_m))
         else:
-            raise ValueError('Unsupported diffusion model!')
+            raise ValueError("Unsupported diffusion model!")
 
     def get_diffusion_sinks(self, y, wall_fluxes=None):
         """Method to calculate a vector of densities time derivatives contributions due to diffusion sinks to the walls
@@ -766,16 +889,22 @@ class Equations(object):
         if n is None:
             n = self.get_density_vector(y)
 
-        n_min = 1.e0
-        t_rec = 1.e-10  # recovery time - should be approx the solver time step time
+        n_min = 1.0e0
+        t_rec = 1.0e-10  # recovery time - should be approx the solver time step time
         below_min_mask = n < n_min
         min_n_correction = np.zeros(len(n))
         min_n_correction[below_min_mask] = (n_min - n[below_min_mask]) / t_rec
 
         return min_n_correction
 
-    def get_dn_dt(self, y, vol_source_rates=None, flow_source_rates=None, diff_source_rates=None,
-                  min_n_correction=None):
+    def get_dn_dt(
+        self,
+        y,
+        vol_source_rates=None,
+        flow_source_rates=None,
+        diff_source_rates=None,
+        min_n_correction=None,
+    ):
         """Method to calculate the vector of densities time derivatives for all the heavy species.
 
         :param y: (np.array) vector of features (n0, ..., nN, rho) of densities and electron energy density in
@@ -800,7 +929,9 @@ class Equations(object):
         if min_n_correction is None:
             min_n_correction = self.get_min_n_correction(y)
 
-        return vol_source_rates + flow_source_rates + diff_source_rates + min_n_correction
+        return (
+            vol_source_rates + flow_source_rates + diff_source_rates + min_n_correction
+        )
 
     def get_power_ext(self, t):
         """Method returning the instant absorbed power P(t) in the time t.
@@ -837,8 +968,12 @@ class Equations(object):
             temp_e = self.get_electron_temperature(y)
 
         mask = self.mask_elc & self.mask_els
-        self.el_en_loss[mask] = \
-            3 * constants.m_e / self.col_partner_masses[mask] * (temp_e - self.temp_g * constants.k / constants.e)
+        self.el_en_loss[mask] = (
+            3
+            * constants.m_e
+            / self.col_partner_masses[mask]
+            * (temp_e - self.temp_g * constants.k / constants.e)
+        )
         return self.el_en_loss
 
     def get_drho_dt_el_inel(self, y, el_en_losses=None, reaction_rates=None):
@@ -878,7 +1013,9 @@ class Equations(object):
         if reaction_rates is None:
             reaction_rates = self.get_reaction_rates(y)
 
-        return 3 / 2 * temp_e * np.sum(self.stoichiovector_electron_net * reaction_rates)
+        return (
+            3 / 2 * temp_e * np.sum(self.stoichiovector_electron_net * reaction_rates)
+        )
 
     def get_drho_dt_el_walls(self, y, temp_e=None, diff_source_rates=None):
         """Method to calculate the contribution of the electrons loss to the walls to the time derivative of
@@ -913,7 +1050,9 @@ class Equations(object):
 
         return temp_e * self.sheath_voltage_factor
 
-    def get_drho_dt_ions_walls(self, y, temp_e=None, sh_pot=None, diff_source_rates=None):
+    def get_drho_dt_ions_walls(
+        self, y, temp_e=None, sh_pot=None, diff_source_rates=None
+    ):
         """Method to calculate the contribution of the loss of ions to the walls to the time derivative of
         the electron energy density.
 
@@ -934,8 +1073,11 @@ class Equations(object):
         if diff_source_rates is None:
             diff_source_rates = self.get_diffusion_source_rates(y)
 
-        return - 0.5 * temp_e * np.sum(diff_source_rates[self.mask_pos]) \
-               - sh_pot * np.sum(self.species_charge[self.mask_pos] * diff_source_rates[self.mask_pos])
+        return -0.5 * temp_e * np.sum(
+            diff_source_rates[self.mask_pos]
+        ) - sh_pot * np.sum(
+            self.species_charge[self.mask_pos] * diff_source_rates[self.mask_pos]
+        )
 
     def get_min_rho_correction(self, y, rho=None):
         """This is an artificial (unphysical) correction applied to the RHS of the el. en. dens. ODE, preventing
@@ -950,14 +1092,25 @@ class Equations(object):
         if rho is None:
             rho = self.get_electron_energy_density(y)
 
-        rho_min = 1.e0
-        t_rec = 1.e-10  # recovery time scale - approx solver step time
-        min_rho_correction = (rho_min - rho) / t_rec if rho < rho_min else 0.
+        rho_min = 1.0e0
+        t_rec = 1.0e-10  # recovery time scale - approx solver step time
+        min_rho_correction = (rho_min - rho) / t_rec if rho < rho_min else 0.0
 
-        return np.float64(min_rho_correction)  # convert explicitly to np.float so it supports copy as others do...
+        return np.float64(
+            min_rho_correction
+        )  # convert explicitly to np.float so it supports copy as others do...
 
-    def get_drho_dt(self, t, y, ext=None, el_inel=None, gain_loss=None, el_walls=None, ions_walls=None,
-                    min_rho_correction=None):
+    def get_drho_dt(
+        self,
+        t,
+        y,
+        ext=None,
+        el_inel=None,
+        gain_loss=None,
+        el_walls=None,
+        ions_walls=None,
+        min_rho_correction=None,
+    ):
         """Method to calculate the time derivative of the electron energy density.
 
         :param t: (float) time in [sec].
@@ -1041,37 +1194,62 @@ class Equations(object):
             sigma_sc = self.get_sigma_sc(y, v_m=v_m, debye_length=debye_length)
             mfp = self.get_mean_free_paths(y, n=n, sigma_sc=sigma_sc)
             diff_c_free = self.get_free_diffusivities(y, mfp=mfp, v_m=v_m)
-            diff_a_pos = self.get_ambipolar_diffusivity_pos(y, n=n, n_e=n_e, temp_i=temp_i, temp_e=temp_e,
-                                                            diff_c_free=diff_c_free)
+            diff_a_pos = self.get_ambipolar_diffusivity_pos(
+                y, n=n, n_e=n_e, temp_i=temp_i, temp_e=temp_e, diff_c_free=diff_c_free
+            )
             diff_a_neg = self.get_ambipolar_diffusivity_neg(y)
-            diff = self.get_diffusivities(y, diff_c_free=diff_c_free, diff_a_pos=diff_a_pos, diff_a_neg=diff_a_neg)
+            diff = self.get_diffusivities(
+                y, diff_c_free=diff_c_free, diff_a_pos=diff_a_pos, diff_a_neg=diff_a_neg
+            )
             wall_fluxes = self.get_wall_fluxes(y, n=n, diff_c=diff, v_m=v_m)
             source_diff_sinks = self.get_diffusion_sinks(y, wall_fluxes=wall_fluxes)
-            source_diff_sources = self.get_diffusion_sources(y, diff_sinks=source_diff_sinks)
-            source_diff = self.get_diffusion_source_rates(y, diff_sinks=source_diff_sinks,
-                                                          diff_sources=source_diff_sources)
+            source_diff_sources = self.get_diffusion_sources(
+                y, diff_sinks=source_diff_sinks
+            )
+            source_diff = self.get_diffusion_source_rates(
+                y, diff_sinks=source_diff_sinks, diff_sources=source_diff_sources
+            )
             min_n_cor = self.get_min_n_correction(y, n=n)
-            dn_dt = self.get_dn_dt(y, vol_source_rates=source_vol, flow_source_rates=source_flow,
-                                   diff_source_rates=source_diff, min_n_correction=min_n_cor)
+            dn_dt = self.get_dn_dt(
+                y,
+                vol_source_rates=source_vol,
+                flow_source_rates=source_flow,
+                diff_source_rates=source_diff,
+                min_n_correction=min_n_cor,
+            )
 
             power_ext = self.get_power_ext(t)
             drho_dt_ext = self.get_drho_dt_ext(t, power_ext=power_ext)
             el_en_losses = self.get_el_en_losses(y, temp_e=temp_e)
-            drho_dt_el_inel = self.get_drho_dt_el_inel(y, el_en_losses=el_en_losses, reaction_rates=rates)
-            drho_dt_gain_loss = self.get_drho_dt_gain_loss(y, temp_e=temp_e, reaction_rates=rates)
-            drho_dt_el_walls = self.get_drho_dt_el_walls(y, temp_e=temp_e, diff_source_rates=source_diff)
+            drho_dt_el_inel = self.get_drho_dt_el_inel(
+                y, el_en_losses=el_en_losses, reaction_rates=rates
+            )
+            drho_dt_gain_loss = self.get_drho_dt_gain_loss(
+                y, temp_e=temp_e, reaction_rates=rates
+            )
+            drho_dt_el_walls = self.get_drho_dt_el_walls(
+                y, temp_e=temp_e, diff_source_rates=source_diff
+            )
             sh_pot = self.get_sheath_voltage(y, temp_e=temp_e)
-            drho_dt_ions_walls = self.get_drho_dt_ions_walls(y, temp_e=temp_e, sh_pot=sh_pot,
-                                                             diff_source_rates=source_diff)
+            drho_dt_ions_walls = self.get_drho_dt_ions_walls(
+                y, temp_e=temp_e, sh_pot=sh_pot, diff_source_rates=source_diff
+            )
             min_rho_correction = self.get_min_rho_correction(y, rho=rho)
             drho_dt = self.get_drho_dt(
-                t, y, ext=drho_dt_ext, el_inel=drho_dt_el_inel, gain_loss=drho_dt_gain_loss, el_walls=drho_dt_el_walls,
-                ions_walls=drho_dt_ions_walls, min_rho_correction=min_rho_correction)
+                t,
+                y,
+                ext=drho_dt_ext,
+                el_inel=drho_dt_el_inel,
+                gain_loss=drho_dt_gain_loss,
+                el_walls=drho_dt_el_walls,
+                ions_walls=drho_dt_ions_walls,
+                min_rho_correction=min_rho_correction,
+            )
             dy_dt = self.get_dy_dt(t, y, dn_dt=dn_dt, drho_dt=drho_dt)
 
             return dy_dt
 
         if jacobian:
-            raise NotImplementedError('Jacobian function not implemented!')
+            raise NotImplementedError("Jacobian function not implemented!")
 
         return obj_function, obj_function_jacobian

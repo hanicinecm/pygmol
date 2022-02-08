@@ -49,7 +49,9 @@ def test_unique_species_and_reactions_ids():
 
 
 def test_incorrect_stoichiomatrix_shape():
-    orig_stoichiomatrix = np.array(DefaultChemistry.reactions_species_stoichiomatrix_lhs)
+    orig_stoichiomatrix = np.array(
+        DefaultChemistry.reactions_species_stoichiomatrix_lhs
+    )
     misshapen = orig_stoichiomatrix[:, :-1]
     with pytest.raises(ChemistryValidationError):
         validate_chemistry(
@@ -75,10 +77,6 @@ def test_incorrect_return_matrix_shape():
     misshapen1 = return_matrix[:, :-1]
     misshapen2 = np.c_[return_matrix, return_matrix[:, 0]]
     with pytest.raises(ChemistryValidationError):
-        validate_chemistry(
-            DefaultChemistry(species_surface_return_matrix=misshapen1)
-        )
+        validate_chemistry(DefaultChemistry(species_surface_return_matrix=misshapen1))
     with pytest.raises(ChemistryValidationError):
-        validate_chemistry(
-            DefaultChemistry(species_surface_return_matrix=misshapen2)
-        )
+        validate_chemistry(DefaultChemistry(species_surface_return_matrix=misshapen2))
