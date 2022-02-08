@@ -23,11 +23,11 @@ jobs:
     - name: Test with pytest
       run: |
         pytest --cov --cov-report xml
-#    - name: "Upload coverage to Codecov"
-#      uses: codecov/codecov-action@v2
-#      with:
-#        fail_ci_if_error: true
-#        verbose: true
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
+      with:
+        fail_ci_if_error: true
+        verbose: true
     - name: Check code format
       run: |
         black --check .
