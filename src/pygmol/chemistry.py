@@ -202,6 +202,7 @@ class ChemistryValidationError(Exception):
     """A custom exception signaling inconsistent or unphysical data
     given by the concrete `Chemistry` class instance.
     """
+
     pass
 
 
