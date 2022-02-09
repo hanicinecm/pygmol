@@ -2,102 +2,66 @@
 validation and sanitisation of parameters passed to the global model.
 """
 import numbers
-from typing import Union, Sequence, Dict
 
-import pydantic
+from .abc import PlasmaParameters
 
 
-class PlasmaParameters(pydantic.BaseModel):
-    # noinspection PyUnresolvedReferences
-    """Data class of parameters needed as an input to the global model
+# noinspection PyAbstractClass
+class PlasmaParametersFromDict(PlasmaParameters):
+    """A `PlasmaParameters` subclass built from a dictionary passed.
 
-    Some basic validation is performed on the parameter values, ensuring
-    their physicality and sanity.
+    The `plasma_params` needs to mirror the interface defined by the
+    `PlasmaParameters` ABC.
+    """
 
-    The `PlasmaParameters` instance can be converted to dict by
-    ``dict(plasma_parameters)``.
+    def __init__(self, plasma_params, *args, **kwargs):
+        for attr, val in plasma_params.items():
+            setattr(self, attr, val)
+        super().__init__(*args, **kwargs)
 
-    Attributes
-    ----------
-    radius, length : float
-        Dimensions of cylindrical plasma in [m].
-    pressure : float
-        Plasma pressure set-point in [Pa].
-    power : float or Sequence[float]
-        Power deposited into plasma in [W]. Either a single number,
-        or a sequence of numbers for time-dependent power
-    t_power : None or Sequence[float], default=None
-        If `power` passed is a sequence, the `t_power` needs to be
-        passed, defining the time-points for the `power` values and
-        having the same length.
-        Defaults to None, which is fine for time-independent `power`.
-    feeds : dict[str, float]
-        Dictionary of feed flows in [sccm] for all the species, which
-        are fed to plasma. The feed flows are keyed by species IDs
-        (distinct names/formulas/... - need to be subset of the values
-        returned by `Chemistry.species_ids`).
-    t_end : float
-        End time of the simulation in [s].
+
+class PlasmaParametersValidationError(Exception):
+    """A custom exception signaling inconsistent or unphysical data
+    given by the concrete `PlasmaParameters` class instance.
+    """
+
+    pass
+
+
+def validate_plasma_parameters(params: PlasmaParameters):
+    """Validation function for concrete `PlasmaParameters` subclasses.
+
+    Various inconsistencies are checked for, such as non-physical values
+    of dimensions, pressure, feed flows, etc, and inconsistent lengths
+    of `params.power` and `params.t_power` if present.
 
     Raises
     ------
-    ValidationError
-        If the values passed are inconsistent or unphysical.
+    PlasmaParametersValidationError
+        If any of the validation checks fails.
     """
-    radius: float
-    length: float
-    pressure: float
-    power: Union[float, Sequence[float]]
-    t_power: Sequence[float] = None
-    feeds: Dict[str, float]
-    t_end: float
-
-    @pydantic.validator("radius")
-    def radius_positive(cls, value):
-        if value <= 0:
-            raise ValueError("Plasma dimensions must be positive!")
-        return value
-
-    @pydantic.validator("length")
-    def length_positive(cls, value):
-        if value <= 0:
-            raise ValueError("Plasma dimensions must be positive!")
-        return value
-
-    @pydantic.validator("pressure")
-    def pressure_positive(cls, value):
-        if value <= 0:
-            raise ValueError("Plasma dimensions must be positive!")
-        return value
-
-    @pydantic.validator("power")
-    def power_non_negative(cls, value):
-        if isinstance(value, Sequence):
-            if not all(val >= 0 for val in value):
-                raise ValueError("All power values must be non negative!")
-        elif value < 0:
-            raise ValueError("All power values must be non negative!")
-        return value
-
-    @pydantic.validator("t_end")
-    def end_time_positive(cls, value):
-        if value <= 0:
-            raise ValueError("The simulation end time must be positive!")
-        return value
-
-    @pydantic.validator("feeds")
-    def feeds_non_negative(cls, value):
-        if not all(val >= 0 for val in value.values()):
-            raise ValueError("All the gas feed flows must be non-negative!")
-        return value
-
-    @pydantic.root_validator
-    def power_series_consistent(cls, values):
-        if not isinstance(values.get("power"), numbers.Number):
-            if values.get("t_power") is None or len(values.get("t_power")) != len(
-                values.get("power")
-            ):
-                raise ValueError(
-                    "The 'power' and 't_power' attributes must have the same length!"
-                )
-        return values
+    # ensure physical values:
+    if params.radius <= 0 or params.length <= 0:
+        raise PlasmaParametersValidationError("Plasma dimensions must be positive!")
+    if params.pressure <= 0:
+        raise PlasmaParametersValidationError("Plasma pressure must be positive!")
+    if params.t_end <= 0:
+        raise PlasmaParametersValidationError("Simulation end-time must be positive!")
+    # power values need to be non-negative:
+    if isinstance(params.power, numbers.Number):
+        power_vals = [params.power]
+    else:
+        power_vals = list(params.power)
+    if not all(val >= 0 for val in power_vals):
+        raise PlasmaParametersValidationError("All power values must be non negative!")
+    # all the feed flows must be non-negative:
+    if not all(val >= 0 for val in params.feeds.values()):
+        raise PlasmaParametersValidationError(
+            "All the gas feed flows must be non-negative!"
+        )
+    # if power is time-dependent, the power and t_power shapes match:
+    if not isinstance(params.power, numbers.Number):
+        if params.t_power is None or (len(power_vals) != len(params.t_power)):
+            raise PlasmaParametersValidationError(
+                "The 'power' and 't_power' attributes must have the same length!"
+            )
