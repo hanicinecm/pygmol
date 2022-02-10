@@ -6,8 +6,8 @@ build-backend = "setuptools.build_meta"
 #addopts = "--doctest-modules --doctest-glob='*.rst'"
 
 [tool.coverage.run]
-include = "src/*"
-omit = "tests/*"
+include = ["src/*"]
+omit = ["tests/*"]
 
 [tool.coverage.html]
 directory = "htmlcov"
