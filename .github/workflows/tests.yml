@@ -26,9 +26,11 @@ jobs:
     - name: Generate coverage data
       run: |
         coverage run -m pytest tests
+        coverage report
+        coverage xml
     - name: Test with pytest
       run: |
-        pytest
+        pytest --doctest-modules --doctest-glob='*.rst'
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
       with:

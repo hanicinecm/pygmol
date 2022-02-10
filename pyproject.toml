@@ -2,11 +2,12 @@
 requires = ["setuptools>=43", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.pytest.ini_options]
-addopts = "--doctest-modules --doctest-glob='README.rst'"
+#[tool.pytest.ini_options]
+#addopts = "--doctest-modules --doctest-glob='*.rst'"
 
 [tool.coverage.run]
-source = ["src/pygmol"]
+include = "src/*"
+omit = "tests/*"
 
 [tool.coverage.html]
 directory = "htmlcov"
