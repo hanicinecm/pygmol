@@ -25,12 +25,12 @@ jobs:
         python -m pip install pytest coverage black
     - name: Generate coverage data
       run: |
-        coverage run -m pytest
+        coverage run -m pytest tests
         coverage report
         coverage xml
     - name: Test with pytest
       run: |
-        pytest --doctest-modules --doctest-glob='*.rst'
+        pytest
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
       with:
