@@ -25,7 +25,7 @@ jobs:
         python -m pip install pytest coverage black
     - name: Generate coverage data
       run: |
-        coverage run -m pytest tests
+        coverage run -m pytest
         coverage report
         coverage xml
     - name: Test with pytest
