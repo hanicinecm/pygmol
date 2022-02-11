@@ -123,11 +123,14 @@ def test_sanitize_power_series():
         sanitize_power_series([1, 1, 1], [400, 500, 600], 2)
 
     assert sanitize_power_series(None, 42, 0.1) == (
-        [-float("inf"), float("inf")], [42, 42]
+        [-float("inf"), float("inf")],
+        [42, 42],
     )
     assert sanitize_power_series(None, [42], 0.1) == (
-        [-float("inf"), float("inf")], [42, 42]
+        [-float("inf"), float("inf")],
+        [42, 42],
     )
     assert sanitize_power_series([0.05], [42], 0.1) == (
-        [-float("inf"), 0.05, float("inf")], [42, 42, 42]
+        [-float("inf"), 0.05, float("inf")],
+        [42, 42, 42],
     )

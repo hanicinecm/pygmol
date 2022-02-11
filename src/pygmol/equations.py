@@ -1,12 +1,12 @@
 import numpy as np
 from numpy import ndarray
-from scipy import constants
+from scipy.constants import pi
 
 from .abc import Equations, Chemistry, PlasmaParameters
+from .plasma_parameters import sanitize_power_series
 
 
-def _smooth_t_power(t_power: ndarray):
-    return t_power
+mtorr = 0.133322  # 1 mTorr in Pa
 
 
 class ElectronEnergyEquations(Equations):
@@ -35,7 +35,6 @@ class ElectronEnergyEquations(Equations):
 
         self.initialize_equations()
 
-    # noinspection PyAttributeOutsideInit
     def initialize_equations(
         self, chemistry: Chemistry = None, plasma_params: PlasmaParameters = None
     ):
@@ -70,43 +69,23 @@ class ElectronEnergyEquations(Equations):
         ]
 
         # plasma parameters needed further on:
-        self.temp_n = np.array(plasma_params.temp_n)  # 0-d
-        self.pressure = np.array(plasma_params.pressure)  # 0-d
+        self.temp_n = plasma_params.temp_n
+        self.pressure = plasma_params.pressure
+        t_power, power = sanitize_power_series(
+            plasma_params.t_power, plasma_params.power, plasma_params.t_end
+        )
+        if len(set(power)) == 1:
+            # power is constant 0-d scalar:
+            self.power = power[0]
+        else:
+            # power is a function of time t returning a scalar:
+            self.power = lambda t: np.interp(t, t_power, power)
+        r, z = self.plasma_params.radius, self.plasma_params.length
+        self.volume = pi * r**2 * z
+        self.area = 2 * pi * r * (r + z)
+        self.diff_l = ((pi / z) ** 2 + (2.405 / r) ** 2) ** -0.5
 
-        self.pow = np.array(model_params["power"])
-        self.t_pow = np.array(model_params["t_power"])
-
-        # adjust repeated values in P_t, since P_t needs to be strictly ascending - need to make it continuous func
-        d_t = 0.00001 * self.t_end
-        for i in range(len(self.t_pow) - 1):
-            if self.t_pow[i] == self.t_pow[i + 1]:
-                self.t_pow[i] -= d_t
-                self.t_pow[i + 1] += d_t
-        assert np.array_equal(
-            self.t_pow, sorted(self.t_pow)
-        ), "Time points for power definition ill-defined!"
-        assert len(self.t_pow) == len(
-            set(self.t_pow)
-        ), "Time points for power definition ill-defined"
-        # I want the border points to be included so I don't need to handle extrapolations...
-        assert (
-            self.t_pow[0] <= 0.0 and self.t_pow[-1] >= self.t_end
-        ), "The power definition needs to cover [0, t_end]"
-        # treated as a non-constant power even if constant power defined e.g. by P=(1000, 1000), t_P=(-1e10, 1e10)
-
-        # secondary and other model parameters:
-        self.volume = constants.pi * self.r**2 * self.z  # plasma volume in [m3]
-        self.area = 2 * constants.pi * self.r * (self.r + self.z)
-        self.diff_l = (
-            (constants.pi / self.z) ** 2 + (2.405 / self.r) ** 2
-        ) ** -0.5  # diffusion length in [m]
-
-        # ********************************************** OTHERS ****************************************************** #
-        self.num_unknowns = self.num_species + 1
-
-        # useful constants:
-        self.mtorr = 0.133322  # 1 mtorr in Pa
-
+        # TODO: bookmark where I finished with refactoring
         # masking arrays:
         self.mask_pos = self.species_charge > 0  # positive species
         self.mask_neg = self.species_charge < 0  # negative species
