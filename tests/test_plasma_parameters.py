@@ -3,6 +3,7 @@ import pytest
 from pygmol.plasma_parameters import (
     PlasmaParametersValidationError,
     validate_plasma_parameters,
+    sanitize_power_series,
 )
 
 from .resources import DefaultParamsStat, DefaultParamsDyn, DefaultParamsMinimal
@@ -64,6 +65,17 @@ def test_invalid_power_series(power, t_power):
         validate_plasma_parameters(params)
 
 
+def test_valid_t_power():
+    params = DefaultParamsDyn(power=[0, 0, 500, 500, 0, 0], t_power=[0, 1, 1, 2, 2, 3])
+    validate_plasma_parameters(params)
+
+
+def test_invalid_t_power():
+    params = DefaultParamsDyn(power=[0, 0, 500, 500, 0, 0], t_power=[0, 1, 2, 3, 2, 1])
+    with pytest.raises(PlasmaParametersValidationError):
+        validate_plasma_parameters(params)
+
+
 @pytest.mark.parametrize("t_end", [-1, 0])
 def test_invalid_t_end(t_end):
     params = DefaultParamsStat(t_end=t_end)
@@ -97,3 +109,25 @@ def test_defaults():
     assert params.temp_e == 1.0
     assert params.temp_n == 300.0
     assert params.t_end == 1.0
+
+
+def test_sanitize_power_series():
+    assert sanitize_power_series(
+        t_power=[50.0, 50.0], power=[0.0, 500.0], t_end=100.0
+    ) == (
+        [-float("inf"), 49.999, 50.001, float("inf")],
+        [0, 0, 500, 500],
+    )
+
+    with pytest.raises(PlasmaParametersValidationError):
+        sanitize_power_series([1, 1, 1], [400, 500, 600], 2)
+
+    assert sanitize_power_series(None, 42, 0.1) == (
+        [-float("inf"), float("inf")], [42, 42]
+    )
+    assert sanitize_power_series(None, [42], 0.1) == (
+        [-float("inf"), float("inf")], [42, 42]
+    )
+    assert sanitize_power_series([0.05], [42], 0.1) == (
+        [-float("inf"), 0.05, float("inf")], [42, 42, 42]
+    )

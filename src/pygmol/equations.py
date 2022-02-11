@@ -1,8 +1,12 @@
 import numpy as np
+from numpy import ndarray
 from scipy import constants
 
 from .abc import Equations, Chemistry, PlasmaParameters
-from .plasma_parameters import PlasmaParameters as ModelParameters
+
+
+def _smooth_t_power(t_power: ndarray):
+    return t_power
 
 
 class ElectronEnergyEquations(Equations):
@@ -13,73 +17,61 @@ class ElectronEnergyEquations(Equations):
     constant (not resolved by this ODE system).
     """
 
-    diffusion_model = 1  # see documentation on ``get_wall_fluxes``.
+    # `Equations` ABC declares a mandatory `ode_system_unknowns`
+    # attribute, which needs to be pre-defined here to instantiate the
+    # class. However, this needs to actually be an *instance attribute*,
+    # so it will be overridden by the initializer.
+    ode_system_unknowns = None
+    # Set the diffusion model: see documentation on ``get_wall_fluxes``.
+    diffusion_model = 1
 
     def __init__(self, chemistry: Chemistry, plasma_params: PlasmaParameters):
-
+        """"""
         self.chemistry = chemistry
         self.plasma_params = plasma_params
+        self.ode_system_unknowns = ["e"] + list(chemistry.species_ids) + ["T_e", "T_n"]
+        # densities are simply denoted by species names, T_n will not be
+        # resolved but rather kept constant at the initial value.
 
-        self.initialize_equations(
-            chemistry=self.chemistry, plasma_params=self.plasma_params
+        self.initialize_equations()
+
+    # noinspection PyAttributeOutsideInit
+    def initialize_equations(
+        self, chemistry: Chemistry = None, plasma_params: PlasmaParameters = None
+    ):
+        """"""
+        # chemistry parameters needed further on:
+        if chemistry is None:
+            chemistry = self.chemistry
+        self.num_species = len(self.chemistry.species_ids)
+        self.num_reactions = len(self.chemistry.reactions_ids)
+        self.sp_charges = np.array(chemistry.species_charges)
+        self.sp_masses = np.array(chemistry.species_masses)
+        self.sp_surface_sticking_coefficients = np.array(
+            chemistry.species_surface_sticking_coefficients
         )
-
-    def initialize_equations(self):
-
-        self.species_name = np.array(chemistry.get_species_name())
-        self.species_charge = np.array(
-            chemistry.get_species_charge()
-        )  # species charges in elementary charges
-        self.species_mass = (
-            np.array(chemistry.get_species_mass()) * constants.atomic_mass
-        )  # species mass in [kg]
-        self.species_lj_sigma = (
-            np.array(chemistry.get_species_lj_sigma()) * 1.0e-10
-        )  # Lennard-Jones sigma in [m]
-        self.species_stick_coef = np.array(chemistry.get_species_stick_coef())
-        self.num_species = len(self.species_name)
-        # reactions attributes:
-        self.reactions_arrh_a = np.array(
-            chemistry.get_reactions_arrh_a()
-        )  # arrhenius pre-exp. factor in [SI]
-        self.reactions_arrh_b = np.array(
-            chemistry.get_reactions_arrh_b()
-        )  # arrhenius n-factor
-        self.reactions_arrh_c = np.array(
-            chemistry.get_reactions_arrh_c()
-        )  # arrhenius activation en [eV] or [K]
-        self.reactions_el_en_loss = np.array(
-            chemistry.get_reactions_el_en_loss()
-        )  # [eV] for inelastic collisions
-        self.num_reactions = len(self.reactions_arrh_a)
-
-        self.stoichiovector_electron_net = np.array(
-            chemistry.get_reactions_stoich_coefs_electron(method="net")
-        )
-        self.stoichiovector_electron_lhs = np.array(
-            chemistry.get_reactions_stoich_coefs_electron(method="lhs")
-        )
-        self.stoichiovector_arbitrary_lhs = np.array(
-            chemistry.get_reactions_stoich_coefs_arbitrary(method="lhs")
-        )
-
-        # multi-d attributes:
-        self.return_matrix = np.array(chemistry.get_return_matrix())
-        self.stoichiomatrix_net = np.array(chemistry.get_stoichiomatrix(method="net"))
-        self.stoichiomatrix_lhs = np.array(chemistry.get_stoichiomatrix(method="lhs"))
-        # stoich matrix of LHS for all reactions only with 1st col electrons and last columns arbitrary_sp 'M'
-        self.stoichiomatrix_reactants_lhs = np.c_[
-            self.stoichiovector_electron_lhs,
-            self.stoichiomatrix_lhs,
-            self.stoichiovector_arbitrary_lhs,
+        self.sp_return_matrix = np.array(chemistry.species_surface_return_matrix)
+        self.r_arrh_a = np.array(chemistry.reactions_arrh_a)
+        self.r_arrh_b = np.array(chemistry.reactions_arrh_b)
+        self.r_arrh_c = np.array(chemistry.reactions_arrh_c)
+        self.r_el_energy_losses = np.array(chemistry.reactions_el_energy_losses)
+        self.r_elastic_flags = np.array(chemistry.reactions_elastic_flags)
+        self.r_stoich_electron_net = np.array(
+            chemistry.reactions_electron_stoich_rhs
+        ) - np.array(chemistry.reactions_electron_stoich_lhs)
+        self.r_stoichiomatrix_net = np.array(
+            chemistry.reactions_species_stoichiomatrix_lhs
+        ) - np.array(chemistry.reactions_species_stoichiomatrix_rhs)
+        # stoichiomatrix with prepended e- column and appended M column
+        self.r_stoichiomatrix_all_lhs = np.c_[
+            chemistry.reactions_electron_stoich_lhs,
+            chemistry.reactions_species_stoichiomatrix_lhs,
+            chemistry.reactions_arbitrary_stoich_lhs,
         ]
 
-        # ***************************************** MODEL PARAMETERS ************************************************* #
-        self.feeds = model_params["feeds"]  # dict with species names as keys
-        self.temp_g = model_params["temp_gas"]
-        self.r, self.z = model_params["radius"], model_params["length"]
-        self.p0 = model_params["pressure"]
-        self.t_end = model_params["t_end"]
+        # plasma parameters needed further on:
+        self.temp_n = np.array(plasma_params.temp_n)  # 0-d
+        self.pressure = np.array(plasma_params.pressure)  # 0-d
 
         self.pow = np.array(model_params["power"])
         self.t_pow = np.array(model_params["t_power"])

@@ -2,6 +2,7 @@
 validation and sanitisation of parameters passed to the global model.
 """
 import numbers
+from typing import Union, Sequence, Tuple
 
 from .abc import PlasmaParameters
 
@@ -65,5 +66,50 @@ def validate_plasma_parameters(params: PlasmaParameters):
             raise PlasmaParametersValidationError(
                 "The 'power' and 't_power' attributes must have the same length!"
             )
+    # t_power needs to be monotonic and rising:
+    if params.t_power is not None:
+        if list(sorted(params.t_power)) != list(params.t_power):
+            raise PlasmaParametersValidationError(
+                "The 't_power' values must be monotonic and rising!"
+            )
+    # temperatures are positive:
     if params.temp_e <= 0 or params.temp_n <= 0:
         raise PlasmaParametersValidationError("Plasma temperature must be positive!")
+
+
+def sanitize_power_series(
+    t_power: Union[None, Sequence[float]],
+    power: Union[float, Sequence[float]],
+    t_end: float,
+) -> Tuple[list, list]:
+    """A helper function taking in the possible `t_power` and `power`
+    attributes of the `PlasmaParameters` instance and returning two
+    lists of the same length describing the power series.
+
+    The lists get sanitized in the way that they will cover the whole
+    time simulation domain and the power time series will be continuous
+    in value.
+
+    At this point consistency checks for monotonic behaviour and shapes
+    should already have been done.
+    """
+    # if the power is constant, return an interval covering -inf to inf
+    if t_power is None:
+        if not isinstance(power, numbers.Number):
+            power = power[0]
+        return [-float("inf"), float("inf")], [power, power]
+    # for good measures, prepend -inf and append inf to t_power:
+    # at this point, guaranteed that both are sequences of the same len
+    t_power = [-float("inf")] + list(t_power) + [float("inf")]
+    power = [power[0]] + list(power) + [power[-1]]
+    # make it continuous in value - add ramping in discontinuities.
+    d_t = 1e-5 * t_end
+    for i in range(len(t_power) - 1):
+        if t_power[i] == t_power[i + 1]:
+            t_power[i] -= d_t
+            t_power[i + 1] += d_t
+    if list(sorted(t_power)) != list(t_power):
+        raise PlasmaParametersValidationError(
+            "The 't_power' values must have been ill-defined!"
+        )
+    return t_power, power
