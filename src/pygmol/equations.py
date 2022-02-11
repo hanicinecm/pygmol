@@ -1,162 +1,31 @@
 import numpy as np
 from scipy import constants
 
+from .abc import Equations, Chemistry, PlasmaParameters
 from .plasma_parameters import PlasmaParameters as ModelParameters
 
 
-class EquationsParametersConsistencyError(Exception):
-    pass
-
-
-class Equations(object):
-    """
-    This class contains methods for calculating the objective functions (systems of ODEs and their Jacobian) for
-    a plasma global model. Contains methods calculating partial results which are used for the final solution
-    calculation. This is by design, so the methods for partial results also can be used for diagnostics.
-
-    The main purpose of this class is the get_objective_functions method which will return one of the following:
-        - (objective function, None) {for jac=False}
-        - (objective function, jacobian function) {for jac=True}
-            - The objective function is a function f(t, y) returning the vector (dy_1/dt, dy_2/dt, ..., dy_N/dt).
-              This function can be fed into various different ODE solvers. In this case, y = (n_1, n_2, ..., n_N, rho)
-              where n is a vector of heavy species densities and rho is the electron energy density n_e*3/2*T_e.
-              It's called objective function within this framework, since this is a function which would be minimised
-              for a steady state solution.
-            - The jacobian function takes the same parameters as the objective function and returns the jacobian
-              matrix of the objective function. This might be needed for some ODE solvers.
+class ElectronEnergyEquations(Equations):
+    """A bases concrete `Equations` class resolving densities of all the
+    heavy species in the `Chemistry` set as well as electron density
+    and electron temperature. The neutral temperature is included in
+    the state *y* (see `Equations` documentation), but it is held
+    constant (not resolved by this ODE system).
     """
 
-    # TODO: Might want to think about if I want to store the chemistry as an attribute and call a higher-level method
-    #       of chemistry itself to get reaction rate coefficients with el_temp and gas_temp as parameters. This way
-    #       I could overcome the restriction of the Arrhenius form and also it would simplify things...
+    diffusion_model = 1  # see documentation on ``get_wall_fluxes``.
 
-    diffusion_model = 1  # selects a diffusion model - see self.get_wall_fluxes docs.
+    def __init__(self, chemistry: Chemistry, plasma_params: PlasmaParameters):
 
-    def __init__(self, chemistry, model_params):
-        """Equations initializer. One of the parameters is an instance of a Chemistry class. This class is describing
-        the chemistry kinetic scheme and needs to define some mandatory methods, for the Equations to work properly.
-        The Chemistry class needs to define the following methods:
+        self.chemistry = chemistry
+        self.plasma_params = plasma_params
 
-        * Methods returning information about the species (heavy species) for which the continuity equations are
-          solved. These methods all return 1D arrays of length of number of 'ordinary' heavy species tracked by
-          the model (density of electron is determined by neutrality and density of arbitrary specie 'M' is a sum of
-          densities of all species - these two 'special' species do not figure in the arrays returned by following
-          methods):
-            - Chemistry.get_species_name()
-                Returns array of (atr) of species names
-            - Chemistry.get_species_charge()
-                Returns array of (int) of species charges (unit = elementary charge e)
-            - Chemistry.get_species_mass()
-                Returns array of (float) of species masses (unit = amu)
-            - Chemistry.get_species_lj_sigma()
-                Returns array of (float) of Lennard-Jones sigma parameters (unit = Angstrom)
-            - Chemistry.get_species_stick_coef()
-                Returns array of (float) of species sticking coefficients. These are all between 0. - 1. and denote
-                ratio of each species which gets stuck to a surface if it reaches the surface.
+        self.initialize_equations(
+            chemistry=self.chemistry, plasma_params=self.plasma_params
+        )
 
-        * Methods returning information about reactions (between the species defined above and electron and 'M'). All
-          return 1D arrays of length of number of reactions between species. Reaction rate coefficients are
-          described by the Arrhenius formula - by 3 parameters arrh_a, arrh_b and arrh_c. arrh_a is in [SI]
-          For electron collisions: k = arrh_a * (el_temp/1eV)**arrh_b * exp(-el_temp/arrh_c), arrh_c is in [eV]
-          For heavy particle collisions: k = arrh_a * (gas_temp/300K)**arrh_b * exp(-gas_temp/arrh_c), arrh_c is in [K]
-            - Chemistry.get_reactions_arrh_a()
-                Returns array of (float) of arrh_a parameters for all the reactions
-            - Chemistry.get_reactions_arrh_b()
-                Returns array of (float) of arrh_b parameters for all the reactions
-            - Chemistry.get_reactions_arrh_c()
-                Returns array of (float) of arrh_c parameters for all the reactions
-            - Chemistry.get_reactions_el_en_loss()
-                Returns array of (float) of electron energy losses in [eV] for all the reactions. These should be
-                only non-zero for inelastic collisions featuring electron in both reactants and products. These will
-                typically be the first non-zero energy in a cross section or the activation energy (arrh_c parameter)
-            - Chemistry.get_reactions_elastic()
-                Returns array of (bool) flags for elastic collisions. Note, that even a reaction with the same
-                reactants and products might be non-elastic (simply modelling the electron energy loss channels by
-                excitations without explicitly including the excited products for example)
+    def initialize_equations(self):
 
-            - Chemistry.get_reactions_stoich_coefs_electron(method=['net', 'lhs', 'rhs'])
-                Returns array of (int) of stoichiometric coefficients of electron in all the reactions. This method
-                takes a parameter 'method' from {'net', 'lhs', 'rhs'}. For lhs and rhs, the stoichiometric coefficients
-                are non-negative only for left-hand-side or right-hand-side of the reaction, whereas for 'net',
-                the stoichiometric coefficients are total production of species (equivalent to 'rhs' - 'lhs').
-            - Chemistry.get_reactions_stoich_coefs_arbitrary(method=['net', 'lhs', 'rhs'])
-                Returns array of (int) of stoichiometric coefficients of arbitrary species M in all the reactions.
-                This method takes a parameter 'method' from {'net', 'lhs', 'rhs'}. For lhs and rhs,
-                the stoichiometric coefficients are non-negative only for left-hand-side or right-hand-side of the
-                reaction, whereas for 'net', the stoichiometric coefficients are total production of species
-                (equivalent to 'rhs' - 'lhs'). If none of the reactions include arbitrary species 'M', the method
-                still needs to be implemented and needs to return all zeros.
-
-        * Methods returning 2D arrays linking either species to species (return species matrix) or species to reactions
-          (stoichiometric matrix)
-            - Chemistry.get_return_matrix()
-                Returns 2D array of shape (Ns, Ns) of (float), where Ns is number of species (without electron and M).
-                The return species matrix is built in a way that R[i, j] (ith row and jth column) denotes number of
-                i-th species created by each one j-th species STUCK to the surface. Non-zero values of R[i, j]
-                therefore only makes sense if Chemistry.get_reactions_stick_coef()[j] > 0.
-
-            - Chemistry.get_stoichiomatrix(method=['net', 'lhs', 'rhs'])
-                Returns 2D array of Nr rows and Ns columns of (float), where Ns is number of species
-                (without electron and M) and Nr is number of reactions. In this matrix, S[i, j] (ith row and jth column)
-                is a stoichiometric coefficient of j-th species in i-th reaction. This method takes argument 'method'.
-                If method is 'lhs' or 'rhs', the stoichiometric coefficients are non-negative values of simple number
-                of species in reactants (LHS) or products (RHS). If method=='net', the stoichiometric coefficient
-                is the net production of the specie[j] (or consumption if negative) and equivalent to rhs - lhs.
-
-
-        :param chemistry: (Chemistry instance) Look above into the __init__ docstring for a documentation on what
-                          methods and attributes the Chemistry class needs to define!
-        :param model_params: (dict or ModelParameters) There are two options regarding this parameter:
-                             1 Supply this parameter by the means of the ModelParameters instance. Consult the
-                               ModelParameters docstrings for more information. One example of the ModelParameters
-                               instance might be:
-                                    model_params = ModelParameters(
-                                        radius=0.1,  # [m]
-                                        length=0.1,  # [m]
-                                        pressure=100,  # [Pa]
-                                        power=(0, 0, 1000, 1000, 0, 0),  # [W]
-                                        t_power=(0, 0.001, 0.001, 0.01, 0.01, 1000),  # [s]
-                                        feeds={'Ar': 100, 'He', 300},  # [sccm]
-                                        t_end=0.1  # [s]
-                                    )
-                               The ModelParameters class handles all the validation. The above case corresponds to
-                               the 1kW power pulse from 0.001 - 0.01 sec and simulation over time domain 0 - 0.1 sec.
-                               The t_power parameter needs to have at least 10% overlap over the t_end. Together
-                               power and t_power form a "open polygon path" of the power pulse. For the constant
-                               power, use e.g.:
-                                    ModelParameters(
-                                        ...
-                                        power=(1000, 1000),
-                                        t_power=(-1000, 1000),
-                                        ...
-                                    )
-                               The model parameters need to be consistent with the passed chemistry instance,
-                               meaning al the species names included in the feeds dict need to be in the chemistry
-                               (need to be present in the chemistry.get_species_name() array). If they are not,
-                               ChemistryConsistencyError will be raised
-                             2 Supply the model parameters by the means of a dict. In this case the ModelParameters
-                               object instance is created from the dict in the code, to ensure all the validators
-                               defined in the ModelParameters class are met. in this case, the parameter might be
-                                    model_params = {
-                                        'radius': 0.1,
-                                        'length': 0.1,
-                                        'pressure': 100,
-                                        'power': (1000, 1000),
-                                        't_power': (0, 1),
-                                        'feeds': {'Ar': 1000},
-                                        't_end': 0.1
-                                    }
-                               all with the same units as above.
-        """
-
-        # ***************************************** MODEL PARAMETERS ************************************************* #
-        # validate the model parameters:
-        if not isinstance(model_params, ModelParameters):
-            model_params = ModelParameters(model_params)
-        self.model_params = model_params  # this is ModelParameters custom dict with validated consistent values
-
-        # ***************************************** CHEMISTRY ******************************************************** #
-        # species attributes:
         self.species_name = np.array(chemistry.get_species_name())
         self.species_charge = np.array(
             chemistry.get_species_charge()

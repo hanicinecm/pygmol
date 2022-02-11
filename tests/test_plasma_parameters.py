@@ -5,7 +5,7 @@ from pygmol.plasma_parameters import (
     validate_plasma_parameters,
 )
 
-from .resources import DefaultParamsStat, DefaultParamsDyn
+from .resources import DefaultParamsStat, DefaultParamsDyn, DefaultParamsMinimal
 
 
 def test_params_static_valid():
@@ -78,3 +78,22 @@ def test_invalid_feeds():
         validate_plasma_parameters(params)
     params.feeds["Ar"] = 0  # this should be fine
     validate_plasma_parameters(params)
+
+
+@pytest.mark.parametrize("temp", [-1, 0])
+def test_invalid_temperatures(temp):
+    params = DefaultParamsStat(temp_e=temp)
+    with pytest.raises(PlasmaParametersValidationError):
+        validate_plasma_parameters(params)
+    params = DefaultParamsStat(temp_n=temp)
+    with pytest.raises(PlasmaParametersValidationError):
+        validate_plasma_parameters(params)
+
+
+def test_defaults():
+    params = DefaultParamsMinimal()
+    assert params.t_power is None
+    assert params.feeds == {}
+    assert params.temp_e == 1.0
+    assert params.temp_n == 300.0
+    assert params.t_end == 1.0

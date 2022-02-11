@@ -65,3 +65,5 @@ def validate_plasma_parameters(params: PlasmaParameters):
             raise PlasmaParametersValidationError(
                 "The 'power' and 't_power' attributes must have the same length!"
             )
+    if params.temp_e <= 0 or params.temp_n <= 0:
+        raise PlasmaParametersValidationError("Plasma temperature must be positive!")

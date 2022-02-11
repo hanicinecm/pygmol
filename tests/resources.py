@@ -52,6 +52,8 @@ class DefaultParamsStat(PlasmaParameters):
     pressure = 1.0
     power = 1.0
     feeds = {"Ar": 1.0}
+    temp_e = 1.0
+    temp_n = 300.0
     t_end = 1.0
 
     def __init__(self, **kwargs):
@@ -69,9 +71,19 @@ class DefaultParamsDyn(PlasmaParameters):
     power = [0.0, 1.0]
     t_power = [0.0, 1.0]
     feeds = {"Ar": 1.0}
+    temp_e = 1.0
+    temp_n = 300.0
     t_end = 1.0
 
     def __init__(self, **kwargs):
         for attr, val in kwargs.items():
             setattr(self, attr, val)
         super().__init__()
+
+
+class DefaultParamsMinimal(PlasmaParameters):
+    """Default concrete PlasmaParameters for testing, implementing the
+    absolute minimum of the values
+    """
+
+    radius, length, pressure, power = 1.0, 1.0, 1.0, 1.0

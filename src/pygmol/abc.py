@@ -49,6 +49,8 @@ class Chemistry(ABC):
     reactions_arbitrary_stoich_rhs : Sequence[int]
     reactions_species_stoichiomatrix_lhs : Sequence[Sequence[int]]
     reactions_species_stoichiomatrix_lhs : Sequence[Sequence[int]]
+
+    TODO: implement defaults for masses, charges, LJ
     """
 
     @property
@@ -215,8 +217,10 @@ class PlasmaParameters(ABC):
     pressure : float
     power : float or Sequence[float]
     t_power : Sequence[float], optional
-    feeds : dict[str, float]
-    t_end : float
+    feeds : dict[str, float], default={}
+    temp_e : float, default=1.0 [eV]
+    temp_n : float, default=300.0 [K]
+    t_end : float, default=1.0 [s]
     """
 
     @property
@@ -251,18 +255,35 @@ class PlasmaParameters(ABC):
         return None
 
     @property
-    @abstractmethod
     def feeds(self) -> Dict[str, float]:
         """Dictionary of feed flows in [sccm] for all the species, which
         are fed to plasma. The feed flows are keyed by species IDs
         (distinct names/formulas/... - the keys need to be subset of the
-        values returned by `Chemistry.species_ids`).
+        values returned by `Chemistry.species_ids`). Defaults to the
+        empty dict.
         """
+        return {}
 
     @property
-    @abstractmethod
+    def temp_e(self) -> float:
+        """Electron temperature of the plasma, or, for the model which
+        do resolve the electron temperature, its initial value. Defaults
+        to 1.0 eV.
+        """
+        return 1.0
+
+    @property
+    def temp_n(self) -> float:
+        """Neutral temperature of the plasma, or, for the model which
+        do resolve the temperature, its initial value. Defaults
+        to 300.0 K.
+        """
+        return 300.0
+
+    @property
     def t_end(self) -> float:
-        """End time of the simulation in [s]."""
+        """End time of the simulation in [s]. Defaults to 1.0 sec."""
+        return 1.0
 
 
 class Equations(ABC):
