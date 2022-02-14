@@ -656,6 +656,152 @@ class ElectronEnergyEquations(Equations):
             v_m = self.get_mean_speeds(y)
         return pi / 8 * mfp * v_m
 
+    def get_ambipolar_diffusivity_pos(
+        self,
+        y: ndarray,
+        n: ndarray = None,
+        n_e: float64 = None,
+        temp_i: float64 = None,
+        temp_e: float64 = None,
+        diff_c_free: ndarray = None,
+    ) -> float64:
+        """Calculate the coefficient of ambipolar diffusion for positive
+        ions.
+
+        Parameters
+        ----------
+        y : ndarray
+        n : ndarray, optional
+            Vector of densities [m-3] for all the heavy species.
+        n_e : float64, optional
+            Electron density [eV].
+        temp_i : float64, optional
+            Ion temperature [K].
+        temp_e : float64, optional
+            Electron temperature [eV].
+        diff_c_free : ndarray, optional
+            Vector of coefficients of free diffusion for all the heavy
+            species [SI].
+
+        Returns
+        -------
+        float64
+            Coefficient of ambipolar diffusion [SI] for positive ions.
+        """
+        if n is None:
+            n = self.get_density_vector(y)
+        if n_e is None:
+            n_e = self.get_electron_density(y, n=n)
+        if temp_i is None:
+            temp_i = self.get_ion_temperature(y)
+        if temp_e is None:
+            temp_e = self.get_electron_temperature(y, n_e=n_e)
+        if diff_c_free is None:
+            diff_c_free = self.get_free_diffusivities(y)
+
+        gamma = temp_e * e / k / temp_i
+        alpha = n[self.mask_sp_negative].sum() / n_e
+        diff_free_pos = diff_c_free[self.mask_sp_positive].mean()
+        # NOTE: this only holds for alpha << mu_e/mu_i
+        diff_a_pos = diff_free_pos * (1 + gamma * (1 + 2 * alpha)) / (1 + alpha * gamma)
+        return diff_a_pos
+
+    def get_diffusivities(
+        self,
+        y: ndarray,
+        diff_c_free: ndarray = None,
+        diff_a_pos: float64 = None,
+    ) -> ndarray:
+        """Calculates the diffusion coefficients.
+
+        The neutrals diffusivities are free diffusivities for neutrals
+        (given by the mixture rules using LJ potentials), the +ion
+        diffusivities are equal to ambipolar diffusion coefficients for
+        positive ions, and the -ions diffusivities are 0.0 in this
+        model.
+
+        Parameters
+        ----------
+        y : ndarray
+        diff_c_free : ndarray, optional
+            Vector of coefficients of free diffusion for all the heavy
+            species [SI].
+        diff_a_pos : float64, optional
+            Coefficient of ambipolar diffusion [SI] for positive ions.
+
+        Returns
+        -------
+        ndarray
+            Vector of diffusion coefficients for all heavy species [SI].
+        """
+        if diff_c_free is None:
+            diff_c_free = self.get_free_diffusivities(y)
+        if diff_a_pos is None:
+            diff_a_pos = self.get_ambipolar_diffusivity_pos(y, diff_c_free=diff_c_free)
+        diff_c = np.empty(self.num_species)
+        diff_c[self.mask_sp_neutral] = diff_c_free[self.mask_sp_neutral]
+        diff_c[self.mask_sp_positive] = diff_a_pos
+        diff_c[self.mask_sp_negative] = 0.0
+        return diff_c
+
+    def get_wall_fluxes(
+        self, y: ndarray, n: ndarray = None, diff_c: ndarray = None, v_m: ndarray = None
+    ) -> ndarray:
+        """Calculate the vector of wall-sticking fluxes for all the
+        heavy species.
+
+        The fluxes therefore already take into the account the sticking
+        coefficients - if sticking coefficients are null for certain
+        species, fluxes for those will be null also.
+
+        This method ONLY takes into account STICKING fluxes. If any
+        species is getting stuck to the surface, it will have a negative
+        wall flux returned by this method. But the same species might
+        have return coefficient defined as 1.0 with the return species
+        of itself, which will mean that the rate of density change due
+        to the surface interactions for this species will still be null.
+
+        This is simply how the `wall_fluxes` are defined in this work.
+        The 'in-fluxes' of returned species are not at all taken into
+        account by this method!
+        All the fluxes are negative by convention (particles "moving out
+        of the system").
+
+        The fluxes depend on the diffusion model (class attribute)
+        - 0: wall flux is a pure diffusive flux (Lietz2016)
+        - 1: wall flux is a combination of diffusive and thermal flux
+          (Schroter2018)
+
+        Parameters
+        ----------
+        y : ndarray
+        n : ndarray, optional
+            Vector of heavy species densities [m-3].
+        diff_c : ndarray, optional
+            Vector of diffusion coefficients [SI].
+        v_m : ndarray, optional
+            Vector of thermal speeds of all the heavy species [m/s].
+
+        Returns
+        -------
+        ndarray
+            Vector of the heavy species out-fluxes in [m-2/s]
+        """
+        if n is None:
+            n = self.get_density_vector(y)
+        if diff_c is None:
+            diff_c = self.get_diffusivities(y)
+        if v_m is None:
+            v_m = self.get_mean_speeds(y)
+
+        s = self.sp_surface_sticking_coefficients
+        if self.diffusion_model == 0:
+            return -diff_c * n * s / self.diff_l**2 * self.volume / self.area
+        elif self.diffusion_model == 1:
+            return -diff_c * n * s / (s * self.diff_l + (4 * diff_c / v_m))
+        else:
+            raise ValueError("Unsupported diffusion model!")
+
     @property
     def ode_system_rhs(self):
         return
