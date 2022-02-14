@@ -1,5 +1,3 @@
-from typing import Sequence, Dict
-
 from pygmol.abc import Chemistry, PlasmaParameters
 
 
@@ -48,13 +46,13 @@ class DefaultParamsStat(PlasmaParameters):
     """Default concrete PlasmaParameters for testing with static power"""
 
     radius = 1.0
-    length = 1.0
-    pressure = 1.0
-    power = 1.0
-    feeds = {"Ar": 1.0}
-    temp_e = 1.0
-    temp_n = 300.0
-    t_end = 1.0
+    length = 2.0
+    pressure = 3.0
+    power = 400.0
+    feeds = {"Ar": 5.0}
+    temp_e = 6.0
+    temp_n = 700.0
+    t_end = 8.0
 
     def __init__(self, **kwargs):
         for attr, val in kwargs.items():
@@ -66,14 +64,14 @@ class DefaultParamsDyn(PlasmaParameters):
     """Default concrete PlasmaParameters for testing with dynamic power"""
 
     radius = 1.0
-    length = 1.0
-    pressure = 1.0
-    power = [0.0, 1.0]
+    length = 2.0
+    pressure = 3.0
+    power = [0.0, 400.0]
     t_power = [0.0, 1.0]
-    feeds = {"Ar": 1.0}
-    temp_e = 1.0
-    temp_n = 300.0
-    t_end = 1.0
+    feeds = {"Ar": 5.0}
+    temp_e = 6.0
+    temp_n = 700.0
+    t_end = 8.0
 
     def __init__(self, **kwargs):
         for attr, val in kwargs.items():
@@ -86,4 +84,4 @@ class DefaultParamsMinimal(PlasmaParameters):
     absolute minimum of the values
     """
 
-    radius, length, pressure, power = 1.0, 1.0, 1.0, 1.0
+    radius, length, pressure, power = 1.0, 2.0, 2.0, 400.0
