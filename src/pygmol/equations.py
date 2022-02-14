@@ -582,7 +582,6 @@ class ElectronEnergyEquations(Equations):
             v_m = self.get_mean_speeds(y)
         if debye_length is None:
             debye_length = self.get_debye_length(y)
-
         # distance of closest approach matrix for each ion-ion pair:
         b_0_ii = (
             e**2
@@ -603,6 +602,59 @@ class ElectronEnergyEquations(Equations):
         )
         self.sp_sigma_sc[np.diag(len(self.sp_sigma_sc) * [True])] = 0.0
         return self.sp_sigma_sc
+
+    def get_mean_free_paths(
+        self, y: ndarray, n: ndarray = None, sigma_sc: ndarray = None
+    ) -> ndarray:
+        """Calculates the vector of mean free paths for all the heavy
+        species.
+
+        Parameters
+        ----------
+        y : ndarray
+        n : ndarray, optional
+            Vector of densities [m-3] of all the heavy species.
+        sigma_sc : ndarray, optional
+            2-d matrix of momentum transfer cross sections [m2] for
+            each species pair.
+
+        Returns
+        -------
+        ndarray
+            Vector of mean free paths [m] for all the heavy species.
+        """
+        if n is None:
+            n = self.get_density_vector(y)
+        if sigma_sc is None:
+            sigma_sc = self.get_sigma_sc(y)
+        mfp = 1 / np.sum(n[np.newaxis, :] * sigma_sc, axis=1)
+        return mfp
+
+    def get_free_diffusivities(
+        self, y: ndarray, mfp: ndarray = None, v_m: ndarray = None
+    ) -> ndarray:
+        """Calculate the free diffusion coefficients for all the heavy
+        species.
+
+        Parameters
+        ----------
+        y : ndarray
+        mfp : ndarray, optional
+            Mean-free-paths of all the heavy species in [m].
+        v_m : ndarray, optional
+            Mean thermal speeds of all the heavy species in [m/s]
+
+        Returns
+        -------
+        ndarray
+            Vector of coefficients of free diffusion for the heavy
+            species in [SI].
+        """
+        if mfp is None:
+            mfp = self.get_mean_free_paths(y)
+        if v_m is None:
+            v_m = self.get_mean_speeds(y)
+        return pi / 8 * mfp * v_m
 
     @property
     def ode_system_rhs(self):
