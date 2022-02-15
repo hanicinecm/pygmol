@@ -112,25 +112,24 @@ def test_defaults():
 
 
 def test_sanitize_power_series():
-    assert sanitize_power_series(
+    t_power, power = sanitize_power_series(
         t_power=[50.0, 50.0], power=[0.0, 500.0], t_end=100.0
-    ) == (
-        [-float("inf"), 49.999, 50.001, float("inf")],
-        [0, 0, 500, 500],
     )
+    assert list(t_power) == [-float("inf"), 49.999, 50.001, float("inf")]
+    assert list(power) == [0, 0, 500, 500]
 
     with pytest.raises(PlasmaParametersValidationError):
         sanitize_power_series([1, 1, 1], [400, 500, 600], 2)
 
-    assert sanitize_power_series(None, 42, 0.1) == (
+    assert [list(a) for a in sanitize_power_series(None, 42, 0.1)] == [
         [-float("inf"), float("inf")],
         [42, 42],
-    )
-    assert sanitize_power_series(None, [42], 0.1) == (
+    ]
+    assert [list(a) for a in sanitize_power_series(None, [42], 0.1)] == [
         [-float("inf"), float("inf")],
         [42, 42],
-    )
-    assert sanitize_power_series([0.05], [42], 0.1) == (
+    ]
+    assert [list(a) for a in sanitize_power_series([0.05], [42], 0.1)] == [
         [-float("inf"), 0.05, float("inf")],
         [42, 42, 42],
-    )
+    ]

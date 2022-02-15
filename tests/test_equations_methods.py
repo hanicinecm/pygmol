@@ -5,7 +5,7 @@ from scipy.constants import k
 import pygmol
 from pygmol.equations import ElectronEnergyEquations
 
-from .resources import DefaultChemistry, DefaultParamsStat
+from .resources import DefaultChemistry, DefaultParamsStat, DefaultParamsDyn
 
 default_chemistry = DefaultChemistry()
 default_plasma_params = DefaultParamsStat()
@@ -51,3 +51,23 @@ def test_get_electron_density(y, monkeypatch):
     monkeypatch.setattr(equations, "sp_charges", charges)
     assert equations.get_electron_density(y, n) == 6.0
     assert equations.get_electron_density(y) == 6.0
+
+
+def test_get_power_ext():
+    params = DefaultParamsDyn(power=[0, 400], t_power=[0, 1])
+    eqs = ElectronEnergyEquations(default_chemistry, params)
+    assert eqs.get_power_ext(0) == 0
+    assert eqs.get_power_ext(1) == 400
+    assert eqs.get_power_ext(0.5) == 200
+    assert eqs.get_power_ext(-1) == 0
+    assert eqs.get_power_ext(2) == 400
+    params = DefaultParamsDyn(power=[100], t_power=[0])
+    eqs = ElectronEnergyEquations(default_chemistry, params)
+    assert eqs.get_power_ext(0) == 100
+    assert eqs.get_power_ext(-1) == 100
+    assert eqs.get_power_ext(1) == 100
+    params = DefaultParamsDyn(power=100, t_power=None)
+    eqs = ElectronEnergyEquations(default_chemistry, params)
+    assert eqs.get_power_ext(0) == 100
+    assert eqs.get_power_ext(-1) == 100
+    assert eqs.get_power_ext(1) == 100

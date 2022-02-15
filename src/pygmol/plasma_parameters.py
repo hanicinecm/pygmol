@@ -4,6 +4,9 @@ validation and sanitisation of parameters passed to the global model.
 import numbers
 from typing import Union, Sequence, Tuple
 
+from numpy import ndarray
+import numpy as np
+
 from .abc import PlasmaParameters
 
 
@@ -81,7 +84,7 @@ def sanitize_power_series(
     t_power: Union[None, Sequence[float]],
     power: Union[float, Sequence[float]],
     t_end: float,
-) -> Tuple[list, list]:
+) -> Tuple[ndarray, ndarray]:
     """A helper function taking in the possible `t_power` and `power` attributes of the
     `PlasmaParameters` instance and returning two lists of the same length describing
     the power series.
@@ -92,14 +95,14 @@ def sanitize_power_series(
     At this point consistency checks for monotonic behaviour and shapes should already
     have been done.
     """
-    # if the power is constant, return an interval covering -inf to inf
+    # if the power is constant, return an interval covering -inf to +inf
     if t_power is None:
         if not isinstance(power, numbers.Number):
             power = power[0]
-        return [-float("inf"), float("inf")], [power, power]
+        return np.array([float("-inf"), float("+inf")]), np.array([power, power])
     # for good measures, prepend -inf and append inf to t_power:
     # at this point, guaranteed that both are sequences of the same len
-    t_power = [-float("inf")] + list(t_power) + [float("inf")]
+    t_power = [float("-inf")] + list(t_power) + [float("+inf")]
     power = [power[0]] + list(power) + [power[-1]]
     # make it continuous in value - add ramping in discontinuities.
     d_t = 1e-5 * t_end
@@ -111,4 +114,4 @@ def sanitize_power_series(
         raise PlasmaParametersValidationError(
             "The 't_power' values must have been ill-defined!"
         )
-    return t_power, power
+    return np.array(t_power), np.array(power)

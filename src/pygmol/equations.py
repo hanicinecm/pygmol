@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 from numpy import ndarray, float64
 from scipy.constants import pi, m_e, k, e, epsilon_0
@@ -770,7 +772,6 @@ class ElectronEnergyEquations(Equations):
             diff_c = self.get_diffusivities(y)
         if v_m is None:
             v_m = self.get_mean_speeds(y)
-
         s = self.sp_surface_sticking_coefficients
         if self.diffusion_model == 0:
             return -diff_c * n * s / self.diff_l**2 * self.volume / self.area
@@ -778,6 +779,210 @@ class ElectronEnergyEquations(Equations):
             return -diff_c * n * s / (s * self.diff_l + (4 * diff_c / v_m))
         else:
             raise ValueError("Unsupported diffusion model!")
+
+    def get_diffusion_sinks(self, y: ndarray, wall_fluxes: ndarray = None) -> ndarray:
+        """Calculates the vector of contributions to time derivatives of densities due
+        to the diffusion sinks to the walls. Only sinks, no sources.
+
+        Parameters
+        ----------
+        y : ndarray
+        wall_fluxes : ndarray, optional
+            Vector of the heavy species out-fluxes in [m-2/s].
+
+        Returns
+        -------
+        ndarray
+            The vector of contributions to time derivatives of densities due to the
+            diffusion losses for all the heavy species in [m-3/s].
+        """
+        if wall_fluxes is None:
+            wall_fluxes = self.get_wall_fluxes(y)
+        source_diff_sinks = wall_fluxes * self.area / self.volume
+        return source_diff_sinks
+
+    def get_diffusion_sources(self, y: ndarray, diff_sinks: ndarray = None) -> ndarray:
+        """Calculate the vector of contributions to time derivatives of densities due to
+        diffusion sources from the walls, caused by return-species re-injection from the
+        walls to the plasma.
+
+        Parameters
+        ----------
+        y : ndarray
+        diff_sinks : ndarray, optional
+            The vector of contributions to time derivatives of densities due to the
+            diffusion losses for all the heavy species in [m-3/s].
+
+        Returns
+        -------
+        ndarray
+            The vector of contributions to time derivatives of densities due to the
+            wall-return sources for all the heavy species in [m-3/s].
+        """
+        if diff_sinks is None:
+            diff_sinks = self.get_diffusion_sinks(y)
+        return np.sum(-diff_sinks[np.newaxis, :] * self.sp_return_matrix, axis=1)
+
+    def get_diffusion_source_rates(
+        self, y: ndarray, diff_sinks: ndarray = None, diff_sources: ndarray = None
+    ) -> ndarray:
+        """Calculate the vector of contributions to time derivatives of densities due to
+        diffusion sinks and wall-return sources.
+
+        Parameters
+        ----------
+        y : ndarray
+        diff_sinks : ndarray, optional
+            The vector of contributions to time derivatives of densities due to the
+            diffusion losses for all the heavy species in [m-3/s].
+        diff_sources : ndarray, optional
+            The vector of contributions to time derivatives of densities due to the
+            wall-return sources for all the heavy species in [m-3/s].
+
+        Returns
+        -------
+        ndarray
+            The vector of contributions to time derivatives of densities due to the
+            diffusion sinks and wall-return sources in [m-3/s].
+        """
+        if diff_sinks is None:
+            diff_sinks = self.get_diffusion_sinks(y)
+        if diff_sources is None:
+            diff_sources = self.get_diffusion_sources(y, diff_sinks=diff_sinks)
+        return diff_sinks + diff_sources
+
+    def get_min_n_correction(self, y: ndarray, n: ndarray = None) -> ndarray:
+        """This is an artificial (unphysical) correction applied to the RHS of the
+        densities ODE system preventing the densities to go under a minimal value (and
+        ultimately from reaching unphysical negative densities.) It supplies a nudge for
+        all the densities below a lower limit which is proportional to the difference of
+        the densities and the limit.
+
+        Parameters
+        ----------
+        y : ndarray
+        n : ndarray, optional
+            Vector of densities of all heavy species in [m-3].
+
+        Returns
+        -------
+        ndarray
+            Vector of corrections in [m-3/s] preventing the densities from reaching
+            values lower than (hard-coded) `n_min`.
+        """
+        if n is None:
+            n = self.get_density_vector(y)
+        n_min = 1.0e0
+        t_rec = 1.0e-10  # recovery time - should be approx the solver time step time
+        below_min_mask = n < n_min
+        min_n_correction = np.zeros(len(n))
+        min_n_correction[below_min_mask] = (n_min - n[below_min_mask]) / t_rec
+        return min_n_correction
+
+    def get_dn_over_dt(
+        self,
+        y: ndarray,
+        vol_source_rates: ndarray = None,
+        flow_source_rates: ndarray = None,
+        diff_source_rates: ndarray = None,
+        min_n_correction: ndarray = None,
+    ) -> ndarray:
+        """Calculates the vector of final time derivatives of densities for all the
+        heavy species.
+
+        Parameters
+        ----------
+        y : ndarray,
+        vol_source_rates : ndarray, optional
+        flow_source_rates : ndarray, optional
+        diff_source_rates : ndarray, optional
+        min_n_correction : ndarray, optional
+
+        Returns
+        -------
+        ndarray
+            Vector of time derivatives of densities [m-3/s] of all the heavy species.
+        """
+        if vol_source_rates is None:
+            vol_source_rates = self.get_volumetric_source_rates(y)
+        if flow_source_rates is None:
+            flow_source_rates = self.get_flow_source_rates(y)
+        if diff_source_rates is None:
+            diff_source_rates = self.get_diffusion_source_rates(y)
+        if min_n_correction is None:
+            min_n_correction = self.get_min_n_correction(y)
+
+        return (
+            vol_source_rates + flow_source_rates + diff_source_rates + min_n_correction
+        )
+
+    def get_power_ext(self, t: float64) -> float64:
+        """Returns the instant absorbed power *P(t)* [W] at the time *t*. Unlike other
+        methods, this one is only dependent on time.
+
+        Parameters
+        ----------
+        t : float or float64
+            Time in [sec].
+
+        Returns
+        -------
+        float64
+            Instantaneous external power *P(t)* in [W] supplied to the plasma.
+        """
+        if callable(self.power):
+            return self.power(t)
+        else:
+            # time-independent power
+            return self.power
+
+    def get_drho_over_dt_ext(self, t: float64, power_ext: float64 = None):
+        """Calculate the contribution of absorbed power to the time derivative of
+        electron energy density. This unlike other methods is only dependent on time.
+
+        Parameters
+        ----------
+        t : float64
+            Time in [sec].
+        power_ext : float64, optional
+            External (instantaneous) power *P(t)* in [W].
+
+        Returns
+        -------
+        float64
+            The contribution to the time derivative of electron energy density due to
+            the absorbed external power in [eV.m-3/s].
+        """
+        if power_ext is None:
+            power_ext = self.get_power_ext(t=t)
+        return power_ext / self.volume / e
+
+    def get_el_en_losses(self, y: ndarray, temp_e: float64 = None) -> ndarray:
+        """Calculates the vector of electron energy losses per reaction for all the
+        reactions.
+
+        Only electron collisions (elastic and inelastic, with at least one electron on
+        the LHS) will have non-zero values and will be used downstream.
+
+        Parameters
+        ----------
+        y : ndarray
+        temp_e : float64, optional
+            Electron temperature in [eV].
+
+        Returns
+        -------
+        ndarray
+            Vector of electron energy losses [eV] per a single collision for each
+            reaction. Only electron collisions will have non-zero values.
+        """
+        if temp_e is None:
+            temp_e = self.get_electron_temperature(y)
+        mask = self.mask_r_electron & self.mask_r_elastic
+        self.r_el_energy_losses[mask] = (
+            3 * m_e / self.r_col_partner_masses[mask] * (temp_e - self.temp_n * k / e)
+        )
+        return self.r_el_energy_losses
 
     @property
     def ode_system_rhs(self):
