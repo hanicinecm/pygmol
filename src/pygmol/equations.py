@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Callable
 
 import numpy as np
 from numpy import ndarray, float64
@@ -936,7 +936,7 @@ class ElectronEnergyEquations(Equations):
             # time-independent power
             return self.power
 
-    def get_drho_over_dt_ext(self, t: float64, power_ext: float64 = None):
+    def get_drho_over_dt_ext(self, t: float64, power_ext: float64 = None) -> float64:
         """Calculate the contribution of absorbed power to the time derivative of
         electron energy density. This unlike other methods is only dependent on time.
 
@@ -984,6 +984,367 @@ class ElectronEnergyEquations(Equations):
         )
         return self.r_el_energy_losses
 
+    def get_drho_over_dt_el_inel(
+        self, y: ndarray, el_en_losses: ndarray = None, reaction_rates: ndarray = None
+    ) -> float64:
+        """Calculates the contribution of elastic and inelastic electron collisions to
+        the time derivative of electron energy density.
+
+        Parameters
+        ----------
+        y : ndarray
+        el_en_losses : ndarray, optional
+            Electron energy losses [eV] per collision for each reaction in the set.
+        reaction_rates : ndarray, optional
+            Reaction rates [m-3/s] for each reaction in the set.
+
+        Returns
+        -------
+        float64
+            A contribution to the time derivative of electron energy density [eV.m-3/s]
+            due to the inelastic and elastic electron collisions.
+        """
+        if el_en_losses is None:
+            el_en_losses = self.get_el_en_losses(y)
+        if reaction_rates is None:
+            reaction_rates = self.get_reaction_rates(y)
+        return (
+            el_en_losses[self.mask_r_electron] * reaction_rates[self.mask_r_electron]
+        ).sum()
+
+    def get_drho_over_dt_gain_loss(
+        self, y: ndarray, temp_e: float64 = None, reaction_rates: ndarray = None
+    ) -> float64:
+        """Calculates the contribution of volumetric creation and destruction of
+        electrons to the time derivative of electron energy density.
+
+        Parameters
+        ----------
+        y : ndarray
+        temp_e : float64, optional
+            Electron temperature in [eV].
+        reaction_rates : ndarray, optional
+            Reaction rates [m-3/s] for each reaction in the set.
+
+        Returns
+        -------
+        float64
+            A contribution to the time derivative of electron energy density [eV.m-3/s]
+            due to the creation and destruction of electrons in volumetric processes.
+        """
+        if temp_e is None:
+            temp_e = self.get_electron_temperature(y)
+        if reaction_rates is None:
+            reaction_rates = self.get_reaction_rates(y)
+        return 3 / 2 * temp_e * (self.r_stoich_electron_net * reaction_rates).sum()
+
+    def get_drho_over_dt_el_walls(
+        self, y: ndarray, temp_e: float64 = None, diff_source_rates: ndarray = None
+    ) -> float64:
+        """Calculates the contribution of the electrons losses to the walls to the time
+        derivative of electron energy density.
+
+        Parameters
+        ----------
+        y : ndarray
+        temp_e : float64, optional
+            Electron temperature [eV].
+        diff_source_rates : ndarray, optional
+            The vector of contributions to time derivatives of densities due to the
+            diffusion sinks and wall-return sources in [m-3/s].
+        Returns
+        -------
+        float64
+            A contribution to the time derivative of electron energy density [eV.m-3/s]
+            due to the electrons losses to the walls.
+        """
+        if temp_e is None:
+            temp_e = self.get_electron_temperature(y)
+        if diff_source_rates is None:
+            diff_source_rates = self.get_diffusion_source_rates(y)
+        tot_el_outflux = np.sum(self.sp_charges * diff_source_rates)
+        return -2 * temp_e * tot_el_outflux
+
+    def get_sheath_voltage(self, y: ndarray, temp_e: float64 = None) -> float64:
+        """Estimates the sheath voltage of the modeled plasma.
+
+        Parameters
+        ---------
+        y : ndarray
+        temp_e : float64, optional
+            Electron temperature [eV].
+
+        Returns
+        -------
+        float64
+            Sheath voltage [V] estimated for an ICP plasma based on the T_e.
+        """
+        if temp_e is None:
+            temp_e = self.get_electron_temperature(y)
+        return temp_e * self.sheath_voltage_per_ev
+
+    def get_drho_over_dt_ions_walls(
+        self,
+        y: ndarray,
+        temp_e: float64 = None,
+        sh_pot: float64 = None,
+        diff_source_rates: ndarray = None,
+    ) -> float64:
+        """Calculates the contribution of the loss of ions to the walls to the time
+        derivative of electron energy density.
+
+        Parameters
+        ----------
+        y : ndarray
+        temp_e : float64, optional
+            Electron temperature [eV].
+        sh_pot : float64, optional
+            Sheath voltage [V].
+        diff_source_rates : ndarray, optional
+            The vector of contributions to time derivatives of densities due to the
+            diffusion sinks and wall-return sources in [m-3/s].
+
+        Returns
+        -------
+        float64
+            A contribution to the time derivative of electron energy density [eV.m-3/s]
+            due to the loss of ions to the walls.
+        """
+        if temp_e is None:
+            temp_e = self.get_electron_temperature(y)
+        if sh_pot is None:
+            sh_pot = self.get_sheath_voltage(y)
+        if diff_source_rates is None:
+            diff_source_rates = self.get_diffusion_source_rates(y)
+        mask = self.mask_sp_positive
+        return -0.5 * temp_e * np.sum(diff_source_rates[mask]) - sh_pot * np.sum(
+            self.sp_charges[mask] * diff_source_rates[mask]
+        )
+
+    def get_min_rho_correction(self, y: ndarray, rho: float64 = None) -> float64:
+        """This is an artificial (unphysical) correction applied to the RHS of the
+        electron energy density ODE.
+
+        It is preventing `rho` getting under a minimal value (and ultimately from
+        reaching unphysical negative values.) It supplies a nudge if rho is below a
+        lower limit. The nudge is proportional to the difference of the rho and the
+        (hard-coded) limit.
+
+        Parameters
+        ----------
+        y : ndarray
+        rho : float64, optional
+            Electron energy density [eV.m-3]
+        Returns
+        -------
+        float64
+            Correction in [eV.m-3/s] preventing the electron energy density from
+            reaching values lower than (hard-coded) `rho_min`.
+        """
+        if rho is None:
+            rho = self.get_electron_energy_density(y)
+        rho_min = 1.0e0
+        t_rec = 1.0e-10  # recovery time scale - approx solver step time
+        min_rho_correction = (rho_min - rho) / t_rec if rho < rho_min else 0.0
+        return float64(min_rho_correction)
+
+    def get_drho_over_dt(
+        self,
+        t: float64,
+        y: ndarray,
+        ext: float64 = None,
+        el_inel: float64 = None,
+        gain_loss: float64 = None,
+        el_walls: float64 = None,
+        ions_walls: float64 = None,
+        min_rho_correction: float64 = None,
+    ) -> float64:
+        """Calculate the total time derivative of the electron energy density.
+
+        Parameters
+        ----------
+        t : float64
+            Time [s].
+        y : ndarray
+            The state vector y (heavy species densities in [m-3] and electron energy
+            density in [eV.m-3/s])
+        ext : float64, optional
+            The contribution to the time derivative of electron energy density due to
+            the absorbed external power in [eV.m-3/s].
+        el_inel : float64, optional
+            A contribution to the time derivative of electron energy density [eV.m-3/s]
+            due to the inelastic and elastic electron collisions.
+        gain_loss : float64, optional
+            A contribution to the time derivative of electron energy density [eV.m-3/s]
+            due to the creation and destruction of electrons in volumetric processes.
+        el_walls : float64, optional
+            A contribution to the time derivative of electron energy density [eV.m-3/s]
+            due to the electrons losses to the walls.
+        ions_walls : float64, optional
+            A contribution to the time derivative of electron energy density [eV.m-3/s]
+            due to the loss of ions to the walls.
+        min_rho_correction : float64
+            Correction in [eV.m-3/s] preventing the electron energy density from
+            reaching values lower than (hard-coded) `rho_min`.
+
+        Returns
+        -------
+        float64
+            The time derivative of the electron energy density [eV.m-3/s] as the sum of
+            all the contributions.
+        """
+        if ext is None:
+            ext = self.get_drho_over_dt_ext(t)
+        if el_inel is None:
+            el_inel = self.get_drho_over_dt_el_inel(y)
+        if gain_loss is None:
+            gain_loss = self.get_drho_over_dt_gain_loss(y)
+        if el_walls is None:
+            el_walls = self.get_drho_over_dt_el_walls(y)
+        if ions_walls is None:
+            ions_walls = self.get_drho_over_dt_ions_walls(y)
+        if min_rho_correction is None:
+            min_rho_correction = self.get_min_rho_correction(y)
+
+        # noinspection PyTypeChecker
+        return ext - el_inel - gain_loss - el_walls - ions_walls + min_rho_correction
+
+    def get_dy_over_dt(
+        self,
+        t: float64,
+        y: ndarray,
+        dn_over_dt: ndarray = None,
+        drho_over_dt: float64 = None,
+    ) -> ndarray:
+        """Calculate the vector of right-hand-sides of the system of ODE which solved
+        for.
+
+        This is the time derivative of the state vector y.
+
+        Parameters
+        ----------
+        t : float64
+            Time [s].
+        y : ndarray
+            State vector of heavy species densities and the electron energy density
+            [n_1, ..., n_N, rho] in [m-3, ..., m-3, eV.m-3].
+        dn_over_dt : ndarray, optional
+            Vector of time derivatives of densities [m-3/s] of all the heavy species.
+        drho_over_dt : float64, optional
+            The time derivative of the electron energy density [eV.m-3/s] as the sum of
+            all the contributions.
+
+        Returns
+        -------
+        ndarray
+            Vector of the time derivatives of the state vector y in
+            [m-3/s, ..., m-3/s, eV.m-3/s].
+        """
+        if dn_over_dt is None:
+            dn_over_dt = self.get_dn_over_dt(y)
+        if drho_over_dt is None:
+            drho_over_dt = self.get_drho_over_dt(t, y)
+        return np.r_[dn_over_dt, drho_over_dt]
+
     @property
-    def ode_system_rhs(self):
-        return
+    def ode_system_rhs(self) -> Callable[[float64, ndarray], ndarray]:
+        """A function for the right-hand-side of an ODE system solving for the
+        *state vector y*.
+
+        The function returned by this property accepts time [s] and the state vector
+        y = [n_1, ..., n_N, rho] in [m-3, ..., m-3, eV.m-3].
+
+        Returns
+        -------
+        Callable(float64, ndarray) -> ndarray
+        """
+
+        def func(t: float64, y: ndarray) -> ndarray:
+            """The right-hand-side of an ODE system solving for the *state vector y*.
+
+            Parameters
+            ----------
+            t : float64
+                Time [s].
+            y : ndarray
+                State vector of heavy species densities and the electron energy density
+                [n_1, ..., n_N, rho] in [m-3, ..., m-3, eV.m-3].
+
+            Returns
+            -------
+            ndarray
+                The right-hand-side of an ODE system solving for the *state vector y*.
+            """
+            n = self.get_density_vector(y)
+            rho = self.get_electron_energy_density(y)
+            n_tot = self.get_total_density(y, n=n)
+            p = self.get_total_pressure(y, n_tot=n_tot)
+            temp_i = self.get_ion_temperature(y, p=p)
+            n_e = self.get_electron_density(y, n=n)
+            temp_e = self.get_electron_temperature(y, n_e=n_e, rho=rho)
+            debye_length = self.get_debye_length(y, n_e=n_e, temp_e=temp_e)
+            rate_coefs = self.get_reaction_rate_coefficients(y, temp_e=temp_e)
+            rates = self.get_reaction_rates(
+                y, n=n, n_e=n_e, n_tot=n_tot, k_r=rate_coefs
+            )
+            source_vol = self.get_volumetric_source_rates(y, rates=rates)
+            source_flow = self.get_flow_source_rates(y, n=n, p=p)
+            v_m = self.get_mean_speeds(y, temp_i=temp_i)
+            sigma_sc = self.get_sigma_sc(y, v_m=v_m, debye_length=debye_length)
+            mfp = self.get_mean_free_paths(y, n=n, sigma_sc=sigma_sc)
+            diff_c_free = self.get_free_diffusivities(y, mfp=mfp, v_m=v_m)
+            diff_a_pos = self.get_ambipolar_diffusivity_pos(
+                y, n=n, n_e=n_e, temp_i=temp_i, temp_e=temp_e, diff_c_free=diff_c_free
+            )
+            diff = self.get_diffusivities(
+                y, diff_c_free=diff_c_free, diff_a_pos=diff_a_pos
+            )
+            wall_fluxes = self.get_wall_fluxes(y, n=n, diff_c=diff, v_m=v_m)
+            source_diff_sinks = self.get_diffusion_sinks(y, wall_fluxes=wall_fluxes)
+            source_diff_sources = self.get_diffusion_sources(
+                y, diff_sinks=source_diff_sinks
+            )
+            source_diff = self.get_diffusion_source_rates(
+                y, diff_sinks=source_diff_sinks, diff_sources=source_diff_sources
+            )
+            min_n_cor = self.get_min_n_correction(y, n=n)
+            dn_over_dt = self.get_dn_over_dt(
+                y,
+                vol_source_rates=source_vol,
+                flow_source_rates=source_flow,
+                diff_source_rates=source_diff,
+                min_n_correction=min_n_cor,
+            )
+            power_ext = self.get_power_ext(t)
+            drho_over_dt_ext = self.get_drho_over_dt_ext(t, power_ext=power_ext)
+            el_en_losses = self.get_el_en_losses(y, temp_e=temp_e)
+            drho_over_dt_el_inel = self.get_drho_over_dt_el_inel(
+                y, el_en_losses=el_en_losses, reaction_rates=rates
+            )
+            drho_over_dt_gain_loss = self.get_drho_over_dt_gain_loss(
+                y, temp_e=temp_e, reaction_rates=rates
+            )
+            drho_over_dt_el_walls = self.get_drho_over_dt_el_walls(
+                y, temp_e=temp_e, diff_source_rates=source_diff
+            )
+            sh_pot = self.get_sheath_voltage(y, temp_e=temp_e)
+            drho_over_dt_ions_walls = self.get_drho_over_dt_ions_walls(
+                y, temp_e=temp_e, sh_pot=sh_pot, diff_source_rates=source_diff
+            )
+            min_rho_correction = self.get_min_rho_correction(y, rho=rho)
+            drho_over_dt = self.get_drho_over_dt(
+                t,
+                y,
+                ext=drho_over_dt_ext,
+                el_inel=drho_over_dt_el_inel,
+                gain_loss=drho_over_dt_gain_loss,
+                el_walls=drho_over_dt_el_walls,
+                ions_walls=drho_over_dt_ions_walls,
+                min_rho_correction=min_rho_correction,
+            )
+            dy_over_dt = self.get_dy_over_dt(
+                t, y, dn_over_dt=dn_over_dt, drho_over_dt=drho_over_dt
+            )
+            return dy_over_dt
+
+        return func
