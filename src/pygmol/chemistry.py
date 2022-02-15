@@ -13,7 +13,7 @@ class ChemistryFromDict(Chemistry):
     The `chemistry_dict` needs to mirror the interface defined by the `Chemistry` ABC.
     """
 
-    def __init__(self, chemistry_dict, *args, **kwargs):
+    def __init__(self, chemistry_dict: dict, *args, **kwargs):
         for attr, val in chemistry_dict.items():
             setattr(self, attr, val)
         super().__init__(*args, **kwargs)

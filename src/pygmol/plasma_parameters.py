@@ -19,8 +19,8 @@ class PlasmaParametersFromDict(PlasmaParameters):
     ABC.
     """
 
-    def __init__(self, plasma_params, *args, **kwargs):
-        for attr, val in plasma_params.items():
+    def __init__(self, plasma_params_dict: dict, *args, **kwargs):
+        for attr, val in plasma_params_dict.items():
             setattr(self, attr, val)
         super().__init__(*args, **kwargs)
 

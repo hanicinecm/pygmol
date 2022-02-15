@@ -1,7 +1,7 @@
 """A module providing a concrete subclass of the `Equations` ABC, which solves for
 the densities of heavy species and the electron energy density.
 """
-from typing import Callable
+from typing import Callable, List
 
 import numpy as np
 from numpy import ndarray, float64
@@ -31,69 +31,67 @@ class ElectronEnergyEquations(Equations):
     mask_sp_positive : ndarray[bool]
     mask_sp_negative : ndarray[bool]
     mask_sp_neutral : ndarray[bool]
-    mask_sp_ions : ndarray[bool]
-    mask_sp_flow : ndarray[bool]
     mask_r_electron : ndarray[bool]
     mask_r_elastic : ndarray[bool]
     num_species : int
     num_reactions : int
-    sp_charges : ndarray[int]
-    sp_masses : ndarray[float]
-    sp_reduced_mass_matrix : ndarray[float]
-    sp_flows : ndarray[float]
-    sp_surface_sticking_coefficients : ndarray[float]
-    sp_return_matrix : ndarray[float]
-    sp_mean_velocities : ndarray[float]
+    sp_charges : ndarray[int64]
+    sp_masses : ndarray[float64]
+    sp_reduced_mass_matrix : ndarray[float64]
+    sp_flows : ndarray[float64]
+    sp_surface_sticking_coefficients : ndarray[float64]
+    sp_return_matrix : ndarray[float64]
+        2D array.
+    sp_mean_velocities : ndarray[float64]
         Mean velocities [SI] of all heavy species
-    sp_sigma_sc : ndarray[float]
+    sp_sigma_sc : ndarray[float64]
         2D array of hard-sphere scattering cross sections in [m2] for every
         species-species pair. Diagonal elements are all kept 0, as collisions with self
         do not contribute to diffusion of species. Only defined for n-n and n-i
         collisions.
-    r_arrh_a : ndarray[float]
-    r_arrh_b : ndarray[float]
-    r_arrh_c : ndarray[float]
-    r_el_energy_losses : ndarray[float]
-    r_col_partner_masses : ndarray[float]
+    r_arrh_a : ndarray[float64]
+    r_arrh_b : ndarray[float64]
+    r_arrh_c : ndarray[float64]
+    r_el_energy_losses : ndarray[float64]
+    r_col_partner_masses : ndarray[float64]
         Masses [kg] of heavy-species collisional partners. Only defined for elastic
         electron collisions, 0.0 otherwise.
-    r_rate_coefs : ndarray[float]
-        Reaction rate coefficients in SI
-    r_stoich_electron_net : ndarray[int]
-    r_stoichiomatrix_net : ndarray[int]
-    r_stoichiomatrix_all_lhs : ndarray[int]
+    r_rate_coefs : ndarray[float64]
+        Reaction rate coefficients in [SI].
+    r_stoich_electron_net : ndarray[int64]
+    r_stoichiomatrix_net : ndarray[int64]
+    r_stoichiomatrix_all_lhs : ndarray[int64]
     temp_n : float
     pressure : float
     power : float
     volume : float
     area : float
     diff_l : float
-    mean_cation_mass : float
-    sheath_voltage_per_ev : float
+    mean_cation_mass : float64
+    sheath_voltage_per_ev : float64
         Sheath voltage [V] per 1eV of electron temperature.
     """
 
-    # `Equations` ABC declares a mandatory `ode_system_unknowns` attribute, which needs
-    # to be pre-defined here to instantiate the class. However, this will be overridden
-    # by an instance attribute.
-    ode_system_unknowns = None
     # Set the diffusion model: see documentation on ``get_wall_fluxes``.
     diffusion_model = 1
 
     def __init__(self, chemistry: Chemistry, plasma_params: PlasmaParameters):
-        """"""
+        """The Equations initializer.
+
+        Parameters
+        ----------
+        chemistry : Chemistry
+            An instance of an `abc.Chemistry` subclass.
+        plasma_params : PlasmaParameters
+            An instance of an `abc.PlasmaParams` subclass.
+        """
         self.chemistry = chemistry
         self.plasma_params = plasma_params
-        self.ode_system_unknowns = list(chemistry.species_ids) + ["rho_e"]
-        # densities are simply denoted by species names, rho_e is
-        # the electron energy density
 
         # stubs for all the instance attributes:
         self.mask_sp_positive = None
         self.mask_sp_negative = None
         self.mask_sp_neutral = None
-        self.mask_sp_ions = None
-        self.mask_sp_flow = None
         self.mask_r_electron = None
         self.mask_r_elastic = None
         self.num_species = None
@@ -139,11 +137,6 @@ class ElectronEnergyEquations(Equations):
         self.mask_sp_positive = np.array(chemistry.species_charges) > 0
         self.mask_sp_negative = np.array(chemistry.species_charges) < 0
         self.mask_sp_neutral = np.array(chemistry.species_charges) == 0
-        self.mask_sp_ions = self.mask_sp_positive | self.mask_sp_negative
-        self.mask_sp_flow = np.array(
-            [sp_id in plasma_params.feeds for sp_id in chemistry.species_ids],
-            dtype=bool,
-        )
         self.mask_r_electron = np.array(chemistry.reactions_electron_stoich_lhs) > 0
         self.mask_r_elastic = np.array(chemistry.reactions_elastic_flags)
 
@@ -1350,3 +1343,26 @@ class ElectronEnergyEquations(Equations):
             return dy_over_dt
 
         return func
+
+    @property
+    def final_solution_labels(self) -> List[str]:
+        """The string labels for the final solution built downstream by the global
+        model.
+        """
+        return list(self.chemistry.species_ids) + ["e", "T_e", "T_n", "p"]
+
+    def get_final_solution_values(self, y: ndarray) -> ndarray:
+        """Turns the raw state vector y into the final values consistent with
+        the `final_solution_labels` above.
+        """
+        n = self.get_density_vector(y)
+        n_e = self.get_electron_density(y, n=n)
+        temp_e = self.get_electron_temperature(y, n_e=n_e)
+        temp_n = self.plasma_params.temp_n
+        p = self.get_total_pressure(y)
+        return np.r_[n, n_e, temp_e, temp_n, p]
+
+    @property
+    def y0_default(self) -> ndarray:
+        # TODO: implement this!
+        return np.array([])
