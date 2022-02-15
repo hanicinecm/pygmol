@@ -1,3 +1,6 @@
+"""Module providing a validation function for the concrete subclasses of `Chemistry` ABC
+as well as a concrete subclass which can be constructed from a dict.
+"""
 import numpy as np
 
 from .abc import Chemistry

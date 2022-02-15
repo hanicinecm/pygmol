@@ -1,10 +1,8 @@
 import numpy as np
 import pytest
-from scipy.constants import k
 
 import pygmol
 from pygmol.equations import ElectronEnergyEquations
-
 from .resources import DefaultChemistry, DefaultParamsStat, DefaultParamsDyn
 
 default_chemistry = DefaultChemistry()

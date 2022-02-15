@@ -1,11 +1,12 @@
-"""Module containing the PlasmaParameters wrapper class handling the
-validation and sanitisation of parameters passed to the global model.
+"""Module providing a validation function for the concrete subclasses of the
+`PlasmaParameters` ABC, as well as a concrete subclass which can be constructed from a
+dict.
 """
 import numbers
 from typing import Union, Sequence, Tuple
 
-from numpy import ndarray
 import numpy as np
+from numpy import ndarray
 
 from .abc import PlasmaParameters
 

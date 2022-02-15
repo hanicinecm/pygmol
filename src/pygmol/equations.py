@@ -1,3 +1,6 @@
+"""A module providing a concrete subclass of the `Equations` ABC, which solves for
+the densities of heavy species and the electron energy density.
+"""
 from typing import Callable
 
 import numpy as np
@@ -6,7 +9,6 @@ from scipy.constants import pi, m_e, k, e, epsilon_0
 
 from .abc import Equations, Chemistry, PlasmaParameters
 from .plasma_parameters import sanitize_power_series
-
 
 mtorr = 0.133322  # 1 mTorr in Pa
 sccm = 4.485e17  # 1 sccm in particles/s
