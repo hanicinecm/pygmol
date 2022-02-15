@@ -11,18 +11,16 @@ sccm = 4.485e17  # 1 sccm in particles/s
 
 
 class ElectronEnergyEquations(Equations):
-    """A bases concrete `Equations` class resolving densities of all the
-    heavy species in the `Chemistry` set as well as electron energy
-    density. The neutral temperature is considered constant by this
-    model (not resolved by this ODE system).
+    """A bases concrete `Equations` class resolving densities of all the heavy species
+    in the `Chemistry` set as well as electron energy density. The neutral temperature
+    is considered constant by this model (not resolved by this ODE system).
 
-    The main purpose of this class is to build a function for the
-    right-hand-side of an ODE system solving for the *state vector y*.
-    All the `get_*` methods of the class take the state vector *y* as
-    a parameter in the form of 1D array (described by the
-    `ode_system_unknowns` instance attribute). In this instance,
-    the state vector is (n0, ..., nN, rho), where n are densities of
-    heavy species [m-3] and rho is the electron energy density [m-3.eV].
+    The main purpose of this class is to build a function for the right-hand-side of an
+    ODE system solving for the *state vector y*. All the `get_*` methods of the class
+    take the state vector *y* as a parameter in the form of 1D array (described by the
+    `ode_system_unknowns` instance attribute). In this instance, the state vector is
+    (n0, ..., nN, rho), where n are densities of heavy species [m-3] and rho is the
+    electron energy density [m-3.eV].
 
     Attributes
     ----------
@@ -44,17 +42,17 @@ class ElectronEnergyEquations(Equations):
     sp_mean_velocities : ndarray[float]
         Mean velocities [SI] of all heavy species
     sp_sigma_sc : ndarray[float]
-        2D array of hard-sphere scattering cross sections in [m2] for
-        every species-species pair. Diagonal elements are all kept 0, as
-        collisions with self do not contribute to diffusion of species.
-        Only defined for n-n and n-i collisions.
+        2D array of hard-sphere scattering cross sections in [m2] for every
+        species-species pair. Diagonal elements are all kept 0, as collisions with self
+        do not contribute to diffusion of species. Only defined for n-n and n-i
+        collisions.
     r_arrh_a : ndarray[float]
     r_arrh_b : ndarray[float]
     r_arrh_c : ndarray[float]
     r_el_energy_losses : ndarray[float]
     r_col_partner_masses : ndarray[float]
-        Masses [kg] of heavy-species collisional partners. Only defined
-        for elastic electron collisions, 0.0 otherwise.
+        Masses [kg] of heavy-species collisional partners. Only defined for elastic
+        electron collisions, 0.0 otherwise.
     r_rate_coefs : ndarray[float]
         Reaction rate coefficients in SI
     r_stoich_electron_net : ndarray[int]
@@ -71,9 +69,9 @@ class ElectronEnergyEquations(Equations):
         Sheath voltage [V] per 1eV of electron temperature.
     """
 
-    # `Equations` ABC declares a mandatory `ode_system_unknowns`
-    # attribute, which needs to be pre-defined here to instantiate the
-    # class. However, this will be overridden by an instance attribute.
+    # `Equations` ABC declares a mandatory `ode_system_unknowns` attribute, which needs
+    # to be pre-defined here to instantiate the class. However, this will be overridden
+    # by an instance attribute.
     ode_system_unknowns = None
     # Set the diffusion model: see documentation on ``get_wall_fluxes``.
     diffusion_model = 1
@@ -228,8 +226,7 @@ class ElectronEnergyEquations(Equations):
 
     @staticmethod
     def get_density_vector(y: ndarray) -> ndarray:
-        """Extracts the vector of heavy species densities from the state
-        vector y.
+        """Extracts the vector of heavy species densities from the state vector y.
 
         Parameters
         ----------
@@ -258,8 +255,8 @@ class ElectronEnergyEquations(Equations):
         return y[-1]
 
     def get_total_density(self, y: ndarray, n: ndarray = None) -> float64:
-        """Calculate the total heavy-species density in [m-3]. Uses
-        ideal gas equation and the neutral gas temperature.
+        """Calculate the total heavy-species density in [m-3]. Uses ideal gas equation
+        and the neutral gas temperature.
 
         Parameters
         ----------
@@ -278,15 +275,14 @@ class ElectronEnergyEquations(Equations):
         return n_tot
 
     def get_total_pressure(self, y: ndarray, n_tot: float64 = None) -> float64:
-        """Calculate the total pressure from the state vector y. Uses
-        ideal gas equation and the neutral gas temperature.
+        """Calculate the total pressure from the state vector y. Uses ideal gas equation
+        and the neutral gas temperature.
 
         Parameters
         ----------
         y : ndarray
         n_tot : float64, optional
-            Scalar of total density [m-3] (sum of densities of all
-            the heavy species).
+            Scalar of total density [m-3] (sum of densities of all the heavy species).
 
         Returns
         -------
@@ -301,9 +297,8 @@ class ElectronEnergyEquations(Equations):
     def get_ion_temperature(self, y: ndarray, p: float64 = None) -> float64:
         """Calculates the ion temperature.
 
-        The ion temperature is not used to evaluate reaction rate
-        coefficients, pressure, etc, but is used only to calculate the
-        coefficients of diffusivity.
+        The ion temperature is not used to evaluate reaction rate coefficients,
+        pressure, etc, but is used only to calculate the coefficients of diffusivity.
 
         Parameters
         ----------
@@ -348,8 +343,8 @@ class ElectronEnergyEquations(Equations):
     def get_electron_temperature(
         self, y: ndarray, n_e: float64 = None, rho: float64 = None
     ) -> float64:
-        """Calculates the electron temperature from the state vector y,
-        with a lower limit set by the gas temperature.
+        """Calculates the electron temperature from the state vector y, with a lower
+        limit set by the gas temperature.
 
         Parameters
         ----------
@@ -400,8 +395,8 @@ class ElectronEnergyEquations(Equations):
     def get_reaction_rate_coefficients(
         self, y: ndarray, temp_e: float64 = None
     ) -> ndarray:
-        """Calculate the vector of reaction rate coefficients for all
-        the reactions from the state vector y.
+        """Calculate the vector of reaction rate coefficients for all the reactions from
+        the state vector y.
 
         Parameters
         ----------
@@ -444,8 +439,7 @@ class ElectronEnergyEquations(Equations):
         n_tot : float64, optional
             Total heavy-species density [m-3].
         k_r : ndarray, optional
-            Vector of reaction rate coefficients [SI] for all the
-            reactions in the set.
+            Vector of reaction rate coefficients [SI] for all the reactions in the set.
 
         Returns
         -------
@@ -468,8 +462,8 @@ class ElectronEnergyEquations(Equations):
         return rates
 
     def get_volumetric_source_rates(self, y: ndarray, rates: ndarray = None) -> ndarray:
-        """Calculates the contributions to the time derivatives of
-        heavy species densities due to volumetric reactions.
+        """Calculates the contributions to the time derivatives of heavy species
+        densities due to volumetric reactions.
 
         Parameters
         ----------
@@ -480,9 +474,8 @@ class ElectronEnergyEquations(Equations):
         Returns
         -------
         ndarray
-            Vector of contributions to the time derivatives of heavy
-            species densities due to volumetric reactions in [m-3/s].
-            Length as number of heavy species.
+            Vector of contributions to the time derivatives of heavy species densities
+            due to volumetric reactions in [m-3/s]. Length as number of heavy species.
         """
         if rates is None:
             rates = self.get_reaction_rates(y)
@@ -493,8 +486,8 @@ class ElectronEnergyEquations(Equations):
     def get_flow_source_rates(
         self, y: ndarray, n: ndarray = None, p: float64 = None
     ) -> ndarray:
-        """Calculates the contributions to the time derivatives of
-        heavy species densities due to the gas flows (in and out).
+        """Calculates the contributions to the time derivatives of heavy species
+        densities due to the gas flows (in and out).
 
         Parameters
         ----------
@@ -507,9 +500,8 @@ class ElectronEnergyEquations(Equations):
         Returns
         -------
         ndarray
-            Vector of contributions to the time derivatives of heavy
-            species densities due to gas flows, in and out, in [m-3/s].
-            Length as number of heavy species.
+            Vector of contributions to the time derivatives of heavy species densities
+            due to gas flows, in and out, in [m-3/s]. Length as number of heavy species.
         """
         if n is None:
             n = self.get_density_vector(y)
@@ -534,8 +526,7 @@ class ElectronEnergyEquations(Equations):
     def get_mean_speeds(self, y: ndarray, temp_i: float64 = None) -> ndarray:
         """Calculates the mean thermal speeds for all the heavy species.
 
-        Only the ion values are dynamically calculated, the neutral
-        values stay static.
+        Only the ion values are dynamically calculated, the neutral values stay static.
 
         Parameters
         ----------
@@ -558,11 +549,10 @@ class ElectronEnergyEquations(Equations):
     def get_sigma_sc(
         self, y: ndarray, v_m: ndarray = None, debye_length: float64 = None
     ) -> ndarray:
-        """Calculates the matrix for species-to-species momentum
-        transfer scattering cross sections.
+        """Calculates the matrix for species-to-species momentum transfer scattering
+        cross sections.
 
-        Only the ion-ion pairs are dynamically calculated, the rest stay
-        static.
+        Only the ion-ion pairs are dynamically calculated, the rest stay static.
 
         Parameters
         ----------
@@ -575,8 +565,8 @@ class ElectronEnergyEquations(Equations):
         Returns
         -------
         ndarray
-            2-d matrix of cross sections [m2] for momentum transfer
-            between each pair of species.
+            2-d matrix of cross sections [m2] for momentum transfer between each pair of
+            species.
         """
         if v_m is None:
             v_m = self.get_mean_speeds(y)
@@ -606,8 +596,7 @@ class ElectronEnergyEquations(Equations):
     def get_mean_free_paths(
         self, y: ndarray, n: ndarray = None, sigma_sc: ndarray = None
     ) -> ndarray:
-        """Calculates the vector of mean free paths for all the heavy
-        species.
+        """Calculates the vector of mean free paths for all the heavy species.
 
         Parameters
         ----------
@@ -615,8 +604,7 @@ class ElectronEnergyEquations(Equations):
         n : ndarray, optional
             Vector of densities [m-3] of all the heavy species.
         sigma_sc : ndarray, optional
-            2-d matrix of momentum transfer cross sections [m2] for
-            each species pair.
+            2-d matrix of momentum transfer cross sections [m2] for each species pair.
 
         Returns
         -------
@@ -633,8 +621,7 @@ class ElectronEnergyEquations(Equations):
     def get_free_diffusivities(
         self, y: ndarray, mfp: ndarray = None, v_m: ndarray = None
     ) -> ndarray:
-        """Calculate the free diffusion coefficients for all the heavy
-        species.
+        """Calculate the free diffusion coefficients for all the heavy species.
 
         Parameters
         ----------
@@ -647,8 +634,7 @@ class ElectronEnergyEquations(Equations):
         Returns
         -------
         ndarray
-            Vector of coefficients of free diffusion for the heavy
-            species in [SI].
+            Vector of coefficients of free diffusion for the heavy species in [SI].
         """
         if mfp is None:
             mfp = self.get_mean_free_paths(y)
@@ -665,8 +651,7 @@ class ElectronEnergyEquations(Equations):
         temp_e: float64 = None,
         diff_c_free: ndarray = None,
     ) -> float64:
-        """Calculate the coefficient of ambipolar diffusion for positive
-        ions.
+        """Calculate the coefficient of ambipolar diffusion for positive ions.
 
         Parameters
         ----------
@@ -680,8 +665,7 @@ class ElectronEnergyEquations(Equations):
         temp_e : float64, optional
             Electron temperature [eV].
         diff_c_free : ndarray, optional
-            Vector of coefficients of free diffusion for all the heavy
-            species [SI].
+            Vector of coefficients of free diffusion for all the heavy species [SI].
 
         Returns
         -------
@@ -714,18 +698,16 @@ class ElectronEnergyEquations(Equations):
     ) -> ndarray:
         """Calculates the diffusion coefficients.
 
-        The neutrals diffusivities are free diffusivities for neutrals
-        (given by the mixture rules using LJ potentials), the +ion
-        diffusivities are equal to ambipolar diffusion coefficients for
-        positive ions, and the -ions diffusivities are 0.0 in this
-        model.
+        The neutrals diffusivities are free diffusivities for neutrals (given by the
+        mixture rules using LJ potentials), the +ion diffusivities are equal to
+        ambipolar diffusion coefficients for positive ions, and the -ions diffusivities
+        are 0.0 in this model.
 
         Parameters
         ----------
         y : ndarray
         diff_c_free : ndarray, optional
-            Vector of coefficients of free diffusion for all the heavy
-            species [SI].
+            Vector of coefficients of free diffusion for all the heavy species [SI].
         diff_a_pos : float64, optional
             Coefficient of ambipolar diffusion [SI] for positive ions.
 
@@ -747,30 +729,25 @@ class ElectronEnergyEquations(Equations):
     def get_wall_fluxes(
         self, y: ndarray, n: ndarray = None, diff_c: ndarray = None, v_m: ndarray = None
     ) -> ndarray:
-        """Calculate the vector of wall-sticking fluxes for all the
-        heavy species.
+        """Calculate the vector of wall-sticking fluxes for all the heavy species.
 
-        The fluxes therefore already take into the account the sticking
-        coefficients - if sticking coefficients are null for certain
-        species, fluxes for those will be null also.
+        The fluxes therefore already take into the account the sticking coefficients -
+        if sticking coefficients are null for certain species, fluxes for those will
+        be null also.
 
-        This method ONLY takes into account STICKING fluxes. If any
-        species is getting stuck to the surface, it will have a negative
-        wall flux returned by this method. But the same species might
-        have return coefficient defined as 1.0 with the return species
-        of itself, which will mean that the rate of density change due
-        to the surface interactions for this species will still be null.
+        This method ONLY takes into account STICKING fluxes. If any species is getting
+        stuck to the surface, it will have a negative wall flux returned by this method.
+        But the same species might have return coefficient defined as 1.0 with the
+        return species of itself, which will mean that the rate of density change due to
+        the surface interactions for this species will still be null.
 
-        This is simply how the `wall_fluxes` are defined in this work.
-        The 'in-fluxes' of returned species are not at all taken into
-        account by this method!
-        All the fluxes are negative by convention (particles "moving out
-        of the system").
+        This is simply how the `wall_fluxes` are defined in this work. The 'in-fluxes'
+        of returned species are not at all taken into account by this method! All the
+        fluxes are negative by convention (particles "moving out of the system").
 
-        The fluxes depend on the diffusion model (class attribute)
+        The fluxes depend on the diffusion model (class attribute):
         - 0: wall flux is a pure diffusive flux (Lietz2016)
-        - 1: wall flux is a combination of diffusive and thermal flux
-          (Schroter2018)
+        - 1: wall flux is a combination of diffusive and thermal flux (Schroter2018)
 
         Parameters
         ----------

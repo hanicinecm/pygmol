@@ -7,8 +7,7 @@ from .abc import Chemistry
 class ChemistryFromDict(Chemistry):
     """A `Chemistry` subclass built from a dictionary passed.
 
-    The `chemistry_dict` needs to mirror the interface defined by the
-    `Chemistry` ABC.
+    The `chemistry_dict` needs to mirror the interface defined by the `Chemistry` ABC.
     """
 
     def __init__(self, chemistry_dict, *args, **kwargs):
@@ -18,8 +17,8 @@ class ChemistryFromDict(Chemistry):
 
 
 class ChemistryValidationError(Exception):
-    """A custom exception signaling inconsistent or unphysical data
-    given by the concrete `Chemistry` class instance.
+    """A custom exception signaling inconsistent or unphysical data given by the
+    concrete `Chemistry` class instance.
     """
 
     pass
@@ -28,12 +27,11 @@ class ChemistryValidationError(Exception):
 def validate_chemistry(chemistry: Chemistry):
     """Validation function for a concrete `Chemistry` subclass.
 
-    Various inconsistencies are checked for, including uniqueness of
-    the `species_ids` and `reactions_ids`, or the correct shapes of
-    all the sequences.
+    Various inconsistencies are checked for, including uniqueness of the `species_ids`
+    and `reactions_ids`, or the correct shapes of all the sequences.
 
-    The physicality of values in the species and reactions sequences is
-    not currently checked for.
+    The physicality of values in the species and reactions sequences is not currently
+    checked for.
 
     TODO: Implement validation of the values - non-negativity etc.
 

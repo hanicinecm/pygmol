@@ -11,8 +11,8 @@ from .abc import PlasmaParameters
 class PlasmaParametersFromDict(PlasmaParameters):
     """A `PlasmaParameters` subclass built from a dictionary passed.
 
-    The `plasma_params` needs to mirror the interface defined by the
-    `PlasmaParameters` ABC.
+    The `plasma_params` needs to mirror the interface defined by the `PlasmaParameters`
+    ABC.
     """
 
     def __init__(self, plasma_params, *args, **kwargs):
@@ -22,8 +22,8 @@ class PlasmaParametersFromDict(PlasmaParameters):
 
 
 class PlasmaParametersValidationError(Exception):
-    """A custom exception signaling inconsistent or unphysical data
-    given by the concrete `PlasmaParameters` class instance.
+    """A custom exception signaling inconsistent or unphysical data given by the
+    concrete `PlasmaParameters` class instance.
     """
 
     pass
@@ -32,9 +32,9 @@ class PlasmaParametersValidationError(Exception):
 def validate_plasma_parameters(params: PlasmaParameters):
     """Validation function for concrete `PlasmaParameters` subclasses.
 
-    Various inconsistencies are checked for, such as non-physical values
-    of dimensions, pressure, feed flows, etc, and inconsistent lengths
-    of `params.power` and `params.t_power` if present.
+    Various inconsistencies are checked for, such as non-physical values of dimensions,
+    pressure, feed flows, etc, and inconsistent lengths of `params.power` and
+    `params.t_power` if present.
 
     Raises
     ------
@@ -82,16 +82,15 @@ def sanitize_power_series(
     power: Union[float, Sequence[float]],
     t_end: float,
 ) -> Tuple[list, list]:
-    """A helper function taking in the possible `t_power` and `power`
-    attributes of the `PlasmaParameters` instance and returning two
-    lists of the same length describing the power series.
+    """A helper function taking in the possible `t_power` and `power` attributes of the
+    `PlasmaParameters` instance and returning two lists of the same length describing
+    the power series.
 
-    The lists get sanitized in the way that they will cover the whole
-    time simulation domain and the power time series will be continuous
-    in value.
+    The lists get sanitized in the way that they will cover the whole time simulation
+    domain and the power time series will be continuous in value.
 
-    At this point consistency checks for monotonic behaviour and shapes
-    should already have been done.
+    At this point consistency checks for monotonic behaviour and shapes should already
+    have been done.
     """
     # if the power is constant, return an interval covering -inf to inf
     if t_power is None:
