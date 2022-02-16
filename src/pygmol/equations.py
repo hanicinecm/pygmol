@@ -1348,12 +1348,27 @@ class ElectronEnergyEquations(Equations):
     def final_solution_labels(self) -> List[str]:
         """The string labels for the final solution built downstream by the global
         model.
+
+        Returns
+        -------
+        list of str
+            Labels of the final solution, e.g. `["Ar", "Ar+", "e", "T_e", "T_n", "p"]`
         """
         return list(self.chemistry.species_ids) + ["e", "T_e", "T_n", "p"]
 
     def get_final_solution_values(self, y: ndarray) -> ndarray:
         """Turns the raw state vector y into the final values consistent with
         the `final_solution_labels` above.
+
+        Parameters
+        ----------
+        y : ndarray
+            State vector *y*.
+
+        Returns
+        -------
+        ndarray
+            Values of the final solution for the given state vector.
         """
         n = self.get_density_vector(y)
         n_e = self.get_electron_density(y, n=n)
@@ -1362,7 +1377,61 @@ class ElectronEnergyEquations(Equations):
         p = self.get_total_pressure(y)
         return np.r_[n, n_e, temp_e, temp_n, p]
 
-    @property
-    def y0_default(self) -> ndarray:
-        # TODO: implement this!
-        return np.array([])
+    def get_y0_default(
+        self,
+        ionization_degree: float = 1.0e-15,
+        negative_ion_fraction: float = 1.0e-15,
+        non_feed_species_fraction: float = 1.0e-15,
+    ) -> ndarray:
+        """Method building an initial guess for the state vector `y` self-consistent
+        and consistent with the chemistry and plasma parameters.
+
+        Parameters
+        ----------
+        ionization_degree : float, default
+            This determines the electron density as a fraction of the total density.
+        negative_ion_fraction : float, default
+            This determines the densities of negative ions as fraction of total density.
+        non_feed_species_fraction : float, default
+            This determines the densities of non-feed neutrals as fractions of total
+            density.
+        Returns
+        -------
+        ndarray
+            Self-consistent initial guess for the state vector `y`.
+        """
+        mask_neg, mask_pos, mask_neu = (
+            self.mask_sp_negative,
+            self.mask_sp_positive,
+            self.mask_sp_neutral,
+        )
+        mask_flows = self.sp_flows > 0
+        # initial total density based on the pressure and temperature:
+        n_tot = self.pressure / (k * self.temp_n)
+        # initial electron density:
+        n_e = n_tot * ionization_degree
+        # initial density of negative ions:
+        n_neg_ions_tot = n_tot * -sum(self.sp_charges[mask_neg]) * negative_ion_fraction
+        # initial density of all negative species:
+        n_neg_tot = n_neg_ions_tot + n_e
+        # initial density of positive species
+        n_pos_tot = n_neg_tot
+
+        # initial density vector
+        n0 = np.zeros(self.num_species)
+        n0[mask_pos] = n_pos_tot / sum(self.sp_charges[mask_pos])
+        if mask_neg.any():
+            n0[mask_neg] = -n_neg_ions_tot / sum(self.sp_charges[mask_neg])
+        # non-feed neutrals:
+        n0[mask_neu & ~mask_flows] = n_tot * non_feed_species_fraction
+        # feed species divide rest of the remaining density in proportion to feed flows
+        if self.sp_flows.sum():
+            n0[mask_flows] = (
+                self.sp_flows[mask_flows] / self.sp_flows.sum() * (n_tot - n0.sum())
+            )
+        else:
+            # if no flows defined, distribute to the total flow uniformly among neutrals
+            n_residual = n_tot - n0[~mask_neu].sum()
+            n0[mask_neu] = n_residual / len(n0[mask_neu])
+
+        return np.r_[n0, 3 / 2 * n_e * self.plasma_params.temp_e]

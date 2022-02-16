@@ -1,6 +1,6 @@
 from typing import Union
 
-from .abc import Chemistry, PlasmaParameters, Equations
+from .abc import Chemistry, PlasmaParameters
 from .chemistry import ChemistryFromDict, validate_chemistry
 from .plasma_parameters import PlasmaParametersFromDict, validate_plasma_parameters
 from .equations import ElectronEnergyEquations

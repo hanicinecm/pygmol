@@ -303,13 +303,15 @@ class Equations(ABC):
     ode_system_rhs : Callable[[float, ndarray], ndarray]
     final_solution_labels : Sequence[str]
     final_solution_values_factory : Callable[[ndarray], ndarray]
-    y0_default : ndarray
 
     Methods
     -------
     get_final_solution_values
         Accepts the state vector `y` and returns the values of the final solution
         consistent with the `final_solution_labels` attribute.
+    get_y0_default
+        Builds a consistent initial guess for the state vector `y`, based on chemistry
+        and plasma parameters.
     """
 
     @abstractmethod
@@ -361,9 +363,8 @@ class Equations(ABC):
         being solved) and return ndarray of the same length as `final_solution_labels`.
         """
 
-    @property
     @abstractmethod
-    def y0_default(self) -> ndarray:
+    def get_y0_default(self) -> ndarray:
         """A default initial guess of the state vector `y`.
 
         The values of `y0_default` are built to be consistent with the passed
