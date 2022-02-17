@@ -1,7 +1,7 @@
 """A module providing a concrete subclass of the `Equations` ABC, which solves for
 the densities of heavy species and the electron energy density.
 """
-from typing import Callable, List
+from typing import Callable, List, Dict
 
 import numpy as np
 from numpy import ndarray, float64
@@ -28,6 +28,8 @@ class ElectronEnergyEquations(Equations):
 
     Attributes
     ----------
+    chemistry : Chemistry
+    plasma_params : PlasmaParameters
     mask_sp_positive : ndarray[bool]
     mask_sp_negative : ndarray[bool]
     mask_sp_neutral : ndarray[bool]
@@ -85,8 +87,8 @@ class ElectronEnergyEquations(Equations):
         plasma_params : PlasmaParameters
             An instance of an `abc.PlasmaParams` subclass.
         """
-        self.chemistry = chemistry
-        self.plasma_params = plasma_params
+        # the ABC constructor just saves the arguments as instance attributes
+        super().__init__(chemistry, plasma_params)
 
         # stubs for all the instance attributes:
         self.mask_sp_positive = None
@@ -1379,6 +1381,7 @@ class ElectronEnergyEquations(Equations):
 
     def get_y0_default(
         self,
+        initial_densities: Dict[str, float] = None,
         ionization_degree: float = 1.0e-15,
         negative_ion_fraction: float = 1.0e-15,
         non_feed_species_fraction: float = 1.0e-15,
@@ -1388,50 +1391,69 @@ class ElectronEnergyEquations(Equations):
 
         Parameters
         ----------
-        ionization_degree : float, default
+        initial_densities : dict[str, float], optional
+            Mapping between heavy species ids (must exist in the chemistry) and their
+            initial densities fractions (will be re-normalized to the pressure).
+            Species which are not present in `initial_densities` will be initialized
+            with n = 0.
+            If not given, the initial densities will be defaulted using the next three
+            arguments.
+        ionization_degree : float, optional
             This determines the electron density as a fraction of the total density.
-        negative_ion_fraction : float, default
+            Only if `initial_densities` not given.
+        negative_ion_fraction : float, optional
             This determines the densities of negative ions as fraction of total density.
-        non_feed_species_fraction : float, default
+            Only if `initial_densities` not given.
+        non_feed_species_fraction : float, optional
             This determines the densities of non-feed neutrals as fractions of total
-            density.
+            density. Only if `initial_densities` not given.
         Returns
         -------
         ndarray
             Self-consistent initial guess for the state vector `y`.
         """
-        mask_neg, mask_pos, mask_neu = (
-            self.mask_sp_negative,
-            self.mask_sp_positive,
-            self.mask_sp_neutral,
-        )
-        mask_flows = self.sp_flows > 0
         # initial total density based on the pressure and temperature:
         n_tot = self.pressure / (k * self.temp_n)
-        # initial electron density:
-        n_e = n_tot * ionization_degree
-        # initial density of negative ions:
-        n_neg_ions_tot = n_tot * -sum(self.sp_charges[mask_neg]) * negative_ion_fraction
-        # initial density of all negative species:
-        n_neg_tot = n_neg_ions_tot + n_e
-        # initial density of positive species
-        n_pos_tot = n_neg_tot
 
-        # initial density vector
-        n0 = np.zeros(self.num_species)
-        n0[mask_pos] = n_pos_tot / sum(self.sp_charges[mask_pos])
-        if mask_neg.any():
-            n0[mask_neg] = -n_neg_ions_tot / sum(self.sp_charges[mask_neg])
-        # non-feed neutrals:
-        n0[mask_neu & ~mask_flows] = n_tot * non_feed_species_fraction
-        # feed species divide rest of the remaining density in proportion to feed flows
-        if self.sp_flows.sum():
-            n0[mask_flows] = (
-                self.sp_flows[mask_flows] / self.sp_flows.sum() * (n_tot - n0.sum())
+        if initial_densities is not None:
+            n0 = np.array(
+                initial_densities.get(sp_id, 0.0)
+                for sp_id in self.chemistry.species_ids
             )
+            n0 = n0 / sum(n0) * n_tot
+            n_e = sum(n0 * self.sp_charges)
         else:
-            # if no flows defined, distribute to the total flow uniformly among neutrals
-            n_residual = n_tot - n0[~mask_neu].sum()
-            n0[mask_neu] = n_residual / len(n0[mask_neu])
+            mask_neg = self.mask_sp_negative
+            mask_pos = self.mask_sp_positive
+            mask_neu = self.mask_sp_neutral
+
+            mask_flows = self.sp_flows > 0
+            # initial electron density:
+            n_e = n_tot * ionization_degree
+            # initial density of negative ions:
+            n_neg_ions_tot = (
+                n_tot * -sum(self.sp_charges[mask_neg]) * negative_ion_fraction
+            )
+            # initial density of all negative species:
+            n_neg_tot = n_neg_ions_tot + n_e
+            # initial density of positive species
+            n_pos_tot = n_neg_tot
+
+            # initial density vector
+            n0 = np.zeros(self.num_species)
+            n0[mask_pos] = n_pos_tot / sum(self.sp_charges[mask_pos])
+            if mask_neg.any():
+                n0[mask_neg] = -n_neg_ions_tot / sum(self.sp_charges[mask_neg])
+            # non-feed neutrals:
+            n0[mask_neu & ~mask_flows] = n_tot * non_feed_species_fraction
+            # feed species divide the remaining density in proportion to feed flows
+            if self.sp_flows.sum():
+                n0[mask_flows] = (
+                    self.sp_flows[mask_flows] / self.sp_flows.sum() * (n_tot - n0.sum())
+                )
+            else:
+                # if no flows defined, distribute to the total flow among neutrals
+                n_residual = n_tot - n0[~mask_neu].sum()
+                n0[mask_neu] = n_residual / len(n0[mask_neu])
 
         return np.r_[n0, 3 / 2 * n_e * self.plasma_params.temp_e]

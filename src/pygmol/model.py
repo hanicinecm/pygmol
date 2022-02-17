@@ -3,6 +3,7 @@ from typing import Union, Mapping
 from pandas import DataFrame
 import pandas
 from numpy import ndarray
+import numpy as np
 from scipy.integrate import solve_ivp
 
 from .abc import Chemistry, PlasmaParameters
@@ -22,6 +23,20 @@ class ModelSolutionError(Exception):
 
 
 class Model:
+    """The Global Model class.
+
+    Takes instances of `Chemistry` (or dict following the correct interface), and
+    `PlasmaParameters` (or a dict following the correct interface), and instantiates
+    a concrete `Equations` subclass.
+
+    The model with consistent chemistry and plasma parameters inputs can be run with
+    the `run` method, and success checked with the `success` method. Other methods are
+    implemented to access the full final solution, reaction rates or wall fluxes, all
+    either as function of time, or the final values. Finally, the `diagnose` method
+    is provided to extract any partial results defined in the `Equations` subclass
+    (see the docstring.)
+    """
+
     def __init__(
         self,
         chemistry: Union[Chemistry, dict],
@@ -37,7 +52,7 @@ class Model:
         ChemistryValidationError
             Signals inconsistent chemistry passed.
         PlasmaParametersValidationError
-            Signals inconsistent plasma parameters passed
+            Signals inconsistent plasma parameters passed.
         """
         if isinstance(chemistry, dict):
             chemistry = ChemistryFromDict(chemistry_dict=chemistry)
@@ -55,9 +70,8 @@ class Model:
         self.chemistry = chemistry
         self.plasma_params = plasma_params
 
-        # equations employed by the model:
-        self.equations = ElectronEnergyEquations(chemistry, plasma_params)
-
+        # placeholder for the equations employed by the model:
+        self.equations = None
         # placeholder for whatever the selected low-level solver returns:
         self.solution_raw = None
         # placeholder for the array of time samples [sec]:
@@ -67,20 +81,16 @@ class Model:
         # `pandas.DataFrame` of all the final solution values:
         self.solution = None
 
-    def _reinitialize_equations(self):
+    def _initialize_equations(self):
         self.equations = ElectronEnergyEquations(self.chemistry, self.plasma_params)
 
-    def _solve(
-        self, y0: ndarray = None, method: str = "BDF", reset_equations: bool = False
-    ):
+    def _solve(self, y0: ndarray = None, method: str = "BDF"):
         """Runs the low-level solver (`scipy.integrate.solve_ivp`).
 
         The solver solves for the state vector *y* (see `Equations` documentation) from
         the initial value `y0`. The raw solution from the solver is stored under the
-        `solution_raw` instance attribute. If the model instance has already been run
-        before (e.g. it's being run for the second time after tweaking the chemistry
-        or plasma parameters...), then the `reset_equations` needs to be set to
-        ``True``.
+        `solution_raw` instance attribute. The equations must have been initialized
+        already!
 
         Parameters
         ----------
@@ -90,12 +100,16 @@ class Model:
         method : str, optional
             The optional solver method forwarded to the low-level solver (see
             `scipy.integrate.solve_ivp`). Defaults to ``"BDF"``.
-        reset_equations : bool, optional
-            `True` needs to be passed if the model has been run before with different
-            chemistry or plasma parameters.
+
+        Raises
+        ------
+        ModelSolutionError
+            If the `solve_ivp` solver encounters an error, or if it is in any way
+            unsuccessful.
         """
-        if reset_equations:
-            self._reinitialize_equations()
+        if self.equations is None:
+            raise ModelSolutionError("The equations have not yet been initialized!")
+
         if y0 is None:
             y0 = self.equations.get_y0_default()
         func = self.equations.ode_system_rhs
@@ -108,6 +122,26 @@ class Model:
             raise ModelSolutionError(f"solve_ivp raised a ValueError: {e}")
 
     def _build_solution(self):
+        """Populates the `solution` instance attribute.
+
+        The `solution_raw` attribute must have already been populated by the `solve`
+        method! This method (`build_solution`) will take the raw rows of state vectors
+        *y* in time (see `Equations` docs) and turn them into the final solution values
+        by the appropriate methods supplied by `Equations` class.
+
+        The final solution will be saved as the `solution` instance attribute and will
+        take form of a pandas.DataFrame with columns consisting of ``"t"`` (the first
+        column of sampled time in [s]), followed by the
+        `equations.final_solution_labels`.
+
+        Raises
+        ------
+        ModelSolutionError
+            If the `solution_raw` is None (not populated yet).
+        """
+        if self.solution_raw is None:
+            raise ModelSolutionError("The solver has not yet been run!")
+
         self.t = self.solution_raw.t
         self.solution_primary = self.solution_raw.y.T
         solution_labels = self.equations.final_solution_labels
@@ -118,22 +152,62 @@ class Model:
                 i, solution_labels
             ] = self.equations.get_final_solution_values(y_i)
 
-    def success(self):
-        return bool(self.solution_raw.success)
-
     def run(
         self,
         initial_densities: Union[Mapping[str, float], pandas.Series] = None,
-        reset_equations: bool = False,
     ):
+        """Runs the solver on the `Equations` instance (`equations` attribute), and
+        builds the final solution out of the solver output.
+
+        Result is the `solution` attribute populated with pandas.DataFrame with
+        columns consisting of ``"t"`` (the first column of sampled time in [s]),
+        followed by the `equations.final_solution_labels` columns.
+
+        Parameters
+        ----------
+        initial_densities : dict[str, float] or pandas.Series, optional
+            Optional mapping between species ids (consistent with the `chemistry` passed
+            to the constructor), and their initial densities, as the initial values
+            for the solver. The densities are re-normalized to the total pressure
+            downstream, so relative fractions are sufficient.
+            If not passed, default is provided by `equations`.
+        """
         if initial_densities is not None:
-            y0 = None
-            raise NotImplementedError
-        else:
-            y0 = None
-        self._solve(y0=y0, reset_equations=reset_equations)
+            initial_densities = dict(initial_densities)
+            # some consistency checks are needed
+            if not set(initial_densities).issubset(self.chemistry.species_ids):
+                raise ModelSolutionError(
+                    "Initial densities inconsistent with the chemistry!"
+                )
+            # is there a room for any electrons?
+            n0 = np.array(
+                initial_densities.get(sp_id, 0.0)
+                for sp_id in self.chemistry.species_ids
+            )
+            if sum(n0 * self.chemistry.species_charges) < 0:
+                raise ModelSolutionError(
+                    "Total initial charge density is negative! No room for electrons!"
+                )
+
+        y0 = self.equations.get_y0_default(initial_densities=initial_densities)
+        self._initialize_equations()
+        self._solve(y0=y0)
         if not self.success():
             raise ModelSolutionError(self.solution_raw.message)
+        self._build_solution()
 
-    def diagnose(self, quantity, primary_solution=None, totals=False):
+    def success(self) -> bool:
+        """Method checking for success of the solution.
+
+        Returns
+        -------
+        bool
+            True, if the solution was successful.
+        """
+        return bool(self.solution_raw.success)
+
+    def diagnose(
+        self, quantity: str, primary_solution: ndarray = None, totals: bool = False
+    ) -> DataFrame:
+        """"""
         raise NotImplementedError

@@ -2,7 +2,7 @@
 various objects expected by the ``pygmol`` framework.
 """
 from abc import ABC, abstractmethod
-from typing import Union, Sequence, Dict, Callable
+from typing import Union, Sequence, Dict, Callable, Mapping
 
 from numpy import ndarray
 
@@ -350,7 +350,7 @@ class Equations(ABC):
         and electron energy density `rho_e`.
 
         The `final_solution_labels` need to be consistent with the
-        `final_solution_values_factory`, which provides a function turning the raw
+        `get_final_solution_values` method, which turns the raw
         values of the state vector `y` to the values of the final solution.
         """
 
@@ -364,7 +364,7 @@ class Equations(ABC):
         """
 
     @abstractmethod
-    def get_y0_default(self) -> ndarray:
+    def get_y0_default(self, initial_densities: Mapping[str, float] = None) -> ndarray:
         """A default initial guess of the state vector `y`.
 
         The values of `y0_default` are built to be consistent with the passed
@@ -372,4 +372,11 @@ class Equations(ABC):
         attributes. For example, the initial guess for `y` should be consistent with
         plasma parameters, such as pressure, electron temperature, neutral temperature,
         etc.
+
+        Parameters
+        ----------
+        initial_densities : Mapping[str, float], optional
+            Mapping between the species ids and the initial densities (or their
+            fractions). If not supplied, the densities in the state vector *y* should be
+            initialized with some sensible default fractions.
         """
