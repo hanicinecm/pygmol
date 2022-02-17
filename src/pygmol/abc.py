@@ -6,6 +6,9 @@ from typing import Union, Sequence, Dict, Callable, Mapping
 
 from numpy import ndarray
 from scipy import constants
+from pyvalem.stateful_species import StatefulSpecies
+from pyvalem.formula import FormulaParseError
+from pyvalem.states import StateParseError
 
 
 class Chemistry(ABC):
@@ -26,12 +29,19 @@ class Chemistry(ABC):
     Documentation for the mandatory and optional attributes can be found in docstrings
     of the corresponding properties.
 
+    Some of the attributes/properties listed here are implemented in this ABC as useful
+    defaults, and therefore must not strictly be re-implemented by a concrete subclass,
+    if inheriting from this abstraction (they are not @abstract properties). All of
+    the attributes are needed by the `pygmol` package however, so a concrete chemistry
+    class which *does not* inherit from this abstraction must implement all the
+    attributes/properties below.
+
     Attributes
     ----------
     species_ids : Sequence[str]
-    species_charges : Sequence[int]
-    species_masses : Sequence[float]
-    species_lj_sigma_coefficients : Sequence[float]
+    species_charges : Sequence[int], default provided by the ABC.
+    species_masses : Sequence[float], default provided by the ABC.
+    species_lj_sigma_coefficients : Sequence[float], default provided by the ABC
     species_surface_sticking_coefficients : Sequence[float]
     species_surface_return_matrix : Sequence[Sequence[float]]
     reactions_ids : Sequence[str] or Sequence[int]
@@ -47,36 +57,58 @@ class Chemistry(ABC):
     reactions_species_stoichiomatrix_lhs : Sequence[Sequence[int]]
     reactions_species_stoichiomatrix_lhs : Sequence[Sequence[int]]
 
-    TODO: implement defaults for masses, charges, LJ, sticking & return coefficients...
+    TODO: implement defaults for sticking & return coefficients...
     """
 
     @property
     @abstractmethod
     def species_ids(self) -> Sequence[str]:
-        """Unique ids/names of all the heavy species in the chemistry.
-        This excludes electrons and the *arbitrary* species 'M'.
+        """Unique ids/names of all the heavy species in the chemistry. This excludes
+        electrons and the *arbitrary* species 'M'.
+
+        If pyvalem-compatible formula strings are used as `species_id`, the `Equations`
+        ABC will provide defaults for `species_charges` and `species_masses` attributes.
+        See the pyvalem package on PyPI.
         """
 
     @property
-    @abstractmethod
     def species_charges(self) -> Sequence[int]:
-        """Charges [e] of all the heavy species in the chemistry.
-        This excludes electrons and the *arbitrary* species 'M'.
+        """Charges [e] of all the heavy species in the chemistry. This excludes
+        electrons and the *arbitrary* species 'M'.
         """
+        try:
+            charges = [
+                StatefulSpecies(sp_name).formula.charge for sp_name in self.species_ids
+            ]
+            return charges
+        except (FormulaParseError, StateParseError):
+            raise NotImplementedError(
+                "Either `species_charges` attribute needs to be implemented, or "
+                "the `species_ids` need to be pyvalem-compatible formulas!"
+            )
 
     @property
-    @abstractmethod
     def species_masses(self) -> Sequence[float]:
-        """Masses [amu] of all the heavy species in the chemistry.
-        This excludes electrons and the *arbitrary* species 'M'.
+        """Masses [amu] of all the heavy species in the chemistry. This excludes
+        electrons and the *arbitrary* species 'M'.
         """
+        try:
+            masses = [
+                StatefulSpecies(sp_name).formula.mass for sp_name in self.species_ids
+            ]
+            return masses
+        except (FormulaParseError, StateParseError):
+            raise NotImplementedError(
+                "Either `species_masses` attribute needs to be implemented, or "
+                "the `species_ids` need to be pyvalem-compatible formulas!"
+            )
 
     @property
-    @abstractmethod
     def species_lj_sigma_coefficients(self) -> Sequence[float]:
         """Lennard-Jones sigma parameters [Angstrom] of all the heavy species in the
         chemistry. This excludes electrons and the *arbitrary* species 'M'.
         """
+        return [3.0 for _ in self.species_ids]
 
     @property
     @abstractmethod

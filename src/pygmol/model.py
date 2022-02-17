@@ -187,7 +187,7 @@ class Model:
                 initial_densities.get(sp_id, 0.0)
                 for sp_id in self.chemistry.species_ids
             )
-            if sum(n0 * self.chemistry.species_charges) < 0:
+            if sum(n0 * self.equations.sp_charges) < 0:
                 raise ModelSolutionError(
                     "Total initial charge density is negative! No room for electrons!"
                 )

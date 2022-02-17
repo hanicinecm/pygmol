@@ -34,7 +34,7 @@ setup(
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     python_requires=">=3.7",
-    install_requires=["scipy>=1.6.2", "pandas"],
+    install_requires=["scipy>=1.6.2", "pyvalem>=2.5.4", "pandas"],
     extras_require={
         "dev": ["pytest-cov", "black", "ipython"],
     },
