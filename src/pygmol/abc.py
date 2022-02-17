@@ -39,10 +39,14 @@ class Chemistry(ABC):
     Attributes
     ----------
     species_ids : Sequence[str]
-    species_charges : Sequence[int], default provided by the ABC.
-    species_masses : Sequence[float], default provided by the ABC.
-    species_lj_sigma_coefficients : Sequence[float], default provided by the ABC
+    species_charges : Sequence[int]
+        Default provided by the ABC.
+    species_masses : Sequence[float]
+        Default provided by the ABC.
+    species_lj_sigma_coefficients : Sequence[float]
+        Default provided by the ABC.
     species_surface_sticking_coefficients : Sequence[float]
+        Default provided by the ABC.
     species_surface_return_matrix : Sequence[Sequence[float]]
     reactions_ids : Sequence[str] or Sequence[int]
     reactions_arrh_a : Sequence[float]
@@ -56,8 +60,6 @@ class Chemistry(ABC):
     reactions_arbitrary_stoich_rhs : Sequence[int]
     reactions_species_stoichiomatrix_lhs : Sequence[Sequence[int]]
     reactions_species_stoichiomatrix_lhs : Sequence[Sequence[int]]
-
-    TODO: implement defaults for sticking & return coefficients...
     """
 
     @property
@@ -75,6 +77,9 @@ class Chemistry(ABC):
     def species_charges(self) -> Sequence[int]:
         """Charges [e] of all the heavy species in the chemistry. This excludes
         electrons and the *arbitrary* species 'M'.
+
+        By default, the species charges are parsed from `species_ids`, if they are in
+        pyvalem-compatible format.
         """
         try:
             charges = [
@@ -91,6 +96,9 @@ class Chemistry(ABC):
     def species_masses(self) -> Sequence[float]:
         """Masses [amu] of all the heavy species in the chemistry. This excludes
         electrons and the *arbitrary* species 'M'.
+
+        By default, the species masses are parsed from `species_ids`, if they are in
+        pyvalem-compatible format.
         """
         try:
             masses = [
@@ -107,17 +115,24 @@ class Chemistry(ABC):
     def species_lj_sigma_coefficients(self) -> Sequence[float]:
         """Lennard-Jones sigma parameters [Angstrom] of all the heavy species in the
         chemistry. This excludes electrons and the *arbitrary* species 'M'.
+
+        The `Chemistry` ABC provides a useful default where the Lennard-Jones
+        coefficients are not available.
         """
         return [3.0 for _ in self.species_ids]
 
     @property
-    @abstractmethod
     def species_surface_sticking_coefficients(self) -> Sequence[float]:
         """Surface sticking coefficients of all the heavy species in the chemistry.
         This excludes electrons and the *arbitrary* species 'M'. The i-th element of
         the sequence denotes what fraction of the i-th species is lost when reaching the
         surface.
+
+        Default is provided by this ABC: All charged species have by default sticking
+        coefficient 1.0, while all the neutral species have by default sticking
+        coefficient 0.0.
         """
+        return [float(bool(sp_charge)) for sp_charge in self.species_charges]
 
     @property
     @abstractmethod
