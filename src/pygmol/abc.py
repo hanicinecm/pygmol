@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Union, Sequence, Dict, Callable, Mapping
 
 from numpy import ndarray
+from scipy import constants
 
 
 class Chemistry(ABC):
@@ -206,10 +207,10 @@ class PlasmaParameters(ABC):
     pressure : float
     power : float or Sequence[float]
     t_power : Sequence[float], optional
-    feeds : dict[str, float], default={}
-    temp_e : float, default=1.0 [eV]
-    temp_n : float, default=300.0 [K]
-    t_end : float, default=1.0 [s]
+    feeds : dict[str, float], optional, default={}
+    temp_e : float, optional, default=1.0 [eV]
+    temp_n : float, optional, default=300.0 [K]
+    t_end : float, optional, default=1.0 [s]
     """
 
     @property
@@ -296,13 +297,23 @@ class Equations(ABC):
       `t` is a scalar time and `y` is an N-D state vector of floats.
     - `final_solution_labels` attribute/property (see the abstract property docstring)
     - `get_final_solution_values` method (see the abstract method docstring)
-    - `y0_default` attribute/property (see the abstract property docstring)
+    - `get_y0_default` method (see the abstract property docstring)
+
+    It is advantageous to implement the `ode_system_rhs` as a combination of a series
+    of intermediate results implemented as getter methods
+    ``get_{quantity}(y: ndarray) -> ndarray | number`` accepting the state vector
+    as the only mandatory argument and returning either a vector or a scalar value.
+    That way, the intermediate results can be evaluated from the solution returned by
+    the solver for every time sample by the `model.Model` class downstream after the
+    model is run/solved. See `model.Model.diagnose` method docs. As an example,
+    stubs for two intermediate results are prepared in this ABC: `get_reaction_rates(y)`
+    and `get_wall_fluxes(y)`. These need to be re-implemented in the concrete subclasses
+    to take advantage of all the functionality of the `model.Model` class.
 
     Attributes
     ----------
     ode_system_rhs : Callable[[float, ndarray], ndarray]
     final_solution_labels : Sequence[str]
-    final_solution_values_factory : Callable[[ndarray], ndarray]
 
     Methods
     -------
@@ -314,6 +325,15 @@ class Equations(ABC):
         and plasma parameters.
     """
 
+    # some constants:
+    mtorr = 0.133322  # 1 mTorr in Pa
+    sccm = 4.485e17  # 1 sccm in particles/s
+    pi = constants.pi
+    m_e = constants.m_e
+    k = constants.k
+    e = constants.e
+    epsilon_0 = constants.epsilon_0
+
     @abstractmethod
     def __init__(self, chemistry: Chemistry, plasma_params: PlasmaParameters):
         """The initializer for the equations class accepting the instances of
@@ -321,6 +341,38 @@ class Equations(ABC):
         """
         self.chemistry = chemistry
         self.plasma_params = plasma_params
+
+    def get_reaction_rates(self, y: ndarray) -> ndarray:
+        """Calculates the vector of reaction rates [SI] for all the reactions in the
+        chemistry (`self.chemistry`).
+
+        Parameters
+        ----------
+        y : ndarray
+            State vector *y*.
+
+        Returns
+        -------
+        ndarray
+            Reaction rates [m-3/s] for all the reactions in the chemistry set.
+        """
+        raise NotImplementedError
+
+    def get_wall_fluxes(self, y: ndarray) -> ndarray:
+        """Calculates the vector of wall-sticking fluxes for all the heavy species in
+        the chemistry (`self.chemistry`).
+
+        Parameters
+        ----------
+        y : ndarray
+            State vector *y*.
+
+        Returns
+        -------
+        ndarray
+            Wall fluxes (out-going) [m-3/s] for all the heavy species in the chemistry.
+        """
+        raise NotImplementedError
 
     @property
     @abstractmethod

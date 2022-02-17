@@ -1,5 +1,4 @@
-from .resources import DefaultChemistry, DefaultParamsStat, DefaultParamsDyn
-
+from .resources import DefaultChemistry, DefaultParamsStat
 
 chem = DefaultChemistry()
 pl_params = DefaultParamsStat()

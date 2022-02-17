@@ -5,13 +5,9 @@ from typing import Callable, List, Dict
 
 import numpy as np
 from numpy import ndarray, float64
-from scipy.constants import pi, m_e, k, e, epsilon_0
 
 from .abc import Equations, Chemistry, PlasmaParameters
 from .plasma_parameters import sanitize_power_series
-
-mtorr = 0.133322  # 1 mTorr in Pa
-sccm = 4.485e17  # 1 sccm in particles/s
 
 
 class ElectronEnergyEquations(Equations):
@@ -190,16 +186,16 @@ class ElectronEnergyEquations(Equations):
             # power is a function of time t returning a scalar:
             self.power = lambda t: np.interp(t, t_power, power)
         r, z = plasma_params.radius, plasma_params.length
-        self.volume = pi * r**2 * z
-        self.area = 2 * pi * r * (r + z)
-        self.diff_l = ((pi / z) ** 2 + (2.405 / r) ** 2) ** -0.5
+        self.volume = self.pi * r**2 * z
+        self.area = 2 * self.pi * r * (r + z)
+        self.diff_l = ((self.pi / z) ** 2 + (2.405 / r) ** 2) ** -0.5
         self.mean_cation_mass = (
             self.sp_masses[self.mask_sp_positive].mean()
             if any(self.mask_sp_positive)
             else np.nan
         )
         self.sheath_voltage_per_ev = np.log(
-            (self.mean_cation_mass / (2 * pi * m_e)) ** 0.5
+            (self.mean_cation_mass / (2 * self.pi * self.m_e)) ** 0.5
         )
 
         # DYNAMIC PARAMETERS (updated with each `self.ode_system_rhs` call)
@@ -212,7 +208,7 @@ class ElectronEnergyEquations(Equations):
         )  # this bit stays static
         self.sp_mean_velocities = np.empty(self.num_species)
         self.sp_mean_velocities[self.mask_sp_neutral] = (
-            8 * k * self.temp_n / (pi * self.sp_masses[self.mask_sp_neutral])
+            8 * self.k * self.temp_n / (self.pi * self.sp_masses[self.mask_sp_neutral])
         ) ** 0.5  # this bit stays static
         self.sp_sigma_sc = (
             np.array(chemistry.species_lj_sigma_coefficients)[:, np.newaxis]
@@ -290,7 +286,7 @@ class ElectronEnergyEquations(Equations):
         """
         if n_tot is None:
             n_tot = self.get_total_density(y)
-        p = k * self.temp_n * n_tot
+        p = self.k * self.temp_n * n_tot
         return p
 
     def get_ion_temperature(self, y: ndarray, p: float64 = None) -> float64:
@@ -312,10 +308,12 @@ class ElectronEnergyEquations(Equations):
         """
         if p is None:
             p = self.get_total_pressure(y)
-        if p > mtorr:
-            temp_i = (0.5 * e / k - self.temp_n) / (p / mtorr) + self.temp_n
+        if p > self.mtorr:
+            temp_i = (0.5 * self.e / self.k - self.temp_n) / (
+                p / self.mtorr
+            ) + self.temp_n
         else:
-            temp_i = 0.5 * e / k
+            temp_i = 0.5 * self.e / self.k
         return temp_i
 
     def get_electron_density(self, y: ndarray, n: ndarray = None) -> float64:
@@ -363,7 +361,7 @@ class ElectronEnergyEquations(Equations):
         if rho is None:
             rho = self.get_electron_energy_density(y)
         temp_e = rho / n_e * 2 / 3
-        temp_n_ev = float64(self.temp_n * k / e)
+        temp_n_ev = float64(self.temp_n * self.k / self.e)
         # noinspection PyTypeChecker
         return max(temp_e, temp_n_ev)
 
@@ -389,7 +387,7 @@ class ElectronEnergyEquations(Equations):
             n_e = self.get_electron_density(y)
         if temp_e is None:
             temp_e = self.get_electron_temperature(y)
-        return (epsilon_0 * temp_e / e / n_e) ** 0.5
+        return (self.epsilon_0 * temp_e / self.e / n_e) ** 0.5
 
     def get_reaction_rate_coefficients(
         self, y: ndarray, temp_e: float64 = None
@@ -425,7 +423,7 @@ class ElectronEnergyEquations(Equations):
         n_e: float64 = None,
         n_tot: float64 = None,
         k_r: ndarray = None,
-    ):
+    ) -> ndarray:
         """Calculates vector of reaction rates for all the reactions.
 
         Parameters
@@ -513,10 +511,10 @@ class ElectronEnergyEquations(Equations):
             n[self.mask_sp_neutral] * (1 / t_flow) * (p - self.pressure) / self.pressure
         )
         # gain rate due to the inflow:
-        source_flow += self.sp_flows * sccm / self.volume
+        source_flow += self.sp_flows * self.sccm / self.volume
         # loss rate due to the outflow, acting on all neutrals
         source_flow[self.mask_sp_neutral] -= (
-            sum(self.sp_flows * sccm / self.volume)
+            sum(self.sp_flows * self.sccm / self.volume)
             * n[self.mask_sp_neutral]
             / sum(n[self.mask_sp_neutral])
         )
@@ -541,7 +539,7 @@ class ElectronEnergyEquations(Equations):
         if temp_i is None:
             temp_i = self.get_ion_temperature(y)
         self.sp_mean_velocities[~self.mask_sp_neutral] = (
-            8 * k * temp_i / (pi * self.sp_masses[~self.mask_sp_neutral])
+            8 * self.k * temp_i / (self.pi * self.sp_masses[~self.mask_sp_neutral])
         ) ** 0.5
         return self.sp_mean_velocities
 
@@ -573,12 +571,12 @@ class ElectronEnergyEquations(Equations):
             debye_length = self.get_debye_length(y)
         # distance of closest approach matrix for each ion-ion pair:
         b_0_ii = (
-            e**2
+            self.e**2
             * abs(
                 self.sp_charges[~self.mask_sp_neutral, np.newaxis]
                 * self.sp_charges[np.newaxis, ~self.mask_sp_neutral]
             )
-            / (2 * pi * epsilon_0)
+            / (2 * self.pi * self.epsilon_0)
             / (
                 self.sp_reduced_mass_matrix[
                     np.ix_(~self.mask_sp_neutral, ~self.mask_sp_neutral)
@@ -587,7 +585,7 @@ class ElectronEnergyEquations(Equations):
             )
         )
         self.sp_sigma_sc[np.ix_(~self.mask_sp_neutral, ~self.mask_sp_neutral)] = (
-            pi * b_0_ii**2 * np.log(2 * debye_length / b_0_ii)
+            self.pi * b_0_ii**2 * np.log(2 * debye_length / b_0_ii)
         )
         self.sp_sigma_sc[np.diag(len(self.sp_sigma_sc) * [True])] = 0.0
         return self.sp_sigma_sc
@@ -639,7 +637,7 @@ class ElectronEnergyEquations(Equations):
             mfp = self.get_mean_free_paths(y)
         if v_m is None:
             v_m = self.get_mean_speeds(y)
-        return pi / 8 * mfp * v_m
+        return self.pi / 8 * mfp * v_m
 
     def get_ambipolar_diffusivity_pos(
         self,
@@ -682,7 +680,7 @@ class ElectronEnergyEquations(Equations):
         if diff_c_free is None:
             diff_c_free = self.get_free_diffusivities(y)
 
-        gamma = temp_e * e / k / temp_i
+        gamma = temp_e * self.e / self.k / temp_i
         alpha = n[self.mask_sp_negative].sum() / n_e
         diff_free_pos = diff_c_free[self.mask_sp_positive].mean()
         # NOTE: this only holds for alpha << mu_e/mu_i
@@ -952,7 +950,7 @@ class ElectronEnergyEquations(Equations):
         """
         if power_ext is None:
             power_ext = self.get_power_ext(t=t)
-        return power_ext / self.volume / e
+        return power_ext / self.volume / self.e
 
     def get_el_en_losses(self, y: ndarray, temp_e: float64 = None) -> ndarray:
         """Calculates the vector of electron energy losses per reaction for all the
@@ -977,7 +975,10 @@ class ElectronEnergyEquations(Equations):
             temp_e = self.get_electron_temperature(y)
         mask = self.mask_r_electron & self.mask_r_elastic
         self.r_el_energy_losses[mask] = (
-            3 * m_e / self.r_col_partner_masses[mask] * (temp_e - self.temp_n * k / e)
+            3
+            * self.m_e
+            / self.r_col_partner_masses[mask]
+            * (temp_e - self.temp_n * self.k / self.e)
         )
         return self.r_el_energy_losses
 
@@ -1413,7 +1414,7 @@ class ElectronEnergyEquations(Equations):
             Self-consistent initial guess for the state vector `y`.
         """
         # initial total density based on the pressure and temperature:
-        n_tot = self.pressure / (k * self.temp_n)
+        n_tot = self.pressure / (self.k * self.temp_n)
 
         if initial_densities is not None:
             n0 = np.array(

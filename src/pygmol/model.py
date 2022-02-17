@@ -1,19 +1,22 @@
+"""
+TODO: module docstring!
+"""
 from typing import Union, Mapping
 
-from pandas import DataFrame
+import numpy as np
 import pandas
 from numpy import ndarray
-import numpy as np
+from pandas import DataFrame
 from scipy.integrate import solve_ivp
 
 from .abc import Chemistry, PlasmaParameters
 from .chemistry import ChemistryFromDict, validate_chemistry
+from .equations import ElectronEnergyEquations
 from .plasma_parameters import (
     PlasmaParametersFromDict,
     validate_plasma_parameters,
     PlasmaParametersValidationError,
 )
-from .equations import ElectronEnergyEquations
 
 
 class ModelSolutionError(Exception):
@@ -206,8 +209,81 @@ class Model:
         """
         return bool(self.solution_raw.success)
 
-    def diagnose(
-        self, quantity: str, primary_solution: ndarray = None, totals: bool = False
-    ) -> DataFrame:
-        """"""
-        raise NotImplementedError
+    def diagnose(self, quantity: str, totals: bool = False) -> DataFrame:
+        """Fetch diagnostics of any of the `equations`' partial results for all the time
+        samples from the finished primary solution.
+
+        This expects the corresponding `get_{quantity}` getter method existing in the
+        `equations` instance and accepting the state vector *y* as the single mandatory
+        argument, and returning either a 1D array or a 0D scalar. See the `Equations`
+        docs for more documentation.
+
+        Creates a dataframe with the quantities returned by the `equations`' getter
+        method evaluated for all the time samples. As an example, if the `equations`
+        instance has `get_reaction_rates(y: ndarray) -> ndarray` getter method, which
+        returns reaction rates for N reactions,
+        then ``diagnose(quantity="reaction_rates")`` will return a `DataFrame` with
+        columns ``["t", "col1", "col2", ..., "colN"]``, where values of the first column
+        are time samples in [sec] and values of the other columns are what the
+        `equations.get_reaction_rates` method returns for each time sample.
+        Optionally, the ``totals=True`` flag might be passed, in which case an
+        additional column ``"total"`` is appended to the `DataFrame` summing all the
+        other columns.
+
+        Parameters
+        ----------
+        quantity : str
+            Needs to correspond to a getter method implemented by the `Equations`
+            concrete subclass stored as the `equations` attribute.
+        totals : bool
+            If True, appends an extra ``"total"`` column summing all the other column
+            (apart from time ``"t"``).
+
+        Returns
+        -------
+        DataFrame
+            Columns are "t", "col1", ...[, "total"]. Index is arbitrary and irrelevant.
+        """
+        if self.solution_primary is None:
+            raise ModelSolutionError("The solver has not yet been run!")
+        equations_method = f"get_{quantity}"
+        diagnostics = np.array(
+            [
+                getattr(self.equations, equations_method)(y).copy()
+                for y in self.solution_primary
+            ]
+        )
+        # if equations.get_{quantity} returns vector, diagnostics is a 2D array.
+        # if it returns a scalar, diagnostics needs to be turned into a 2D array:
+        if len(diagnostics.shape) < 2:
+            diagnostics = diagnostics[np.newaxis].T
+        labels = [f"col{i}" for i in range(1, diagnostics.shape[1] + 1)]
+
+        df = DataFrame(np.c_[self.t, diagnostics], columns=["t"] + labels)
+        if totals:
+            df["total"] = diagnostics.sum(axis=1)
+        return df
+
+    def get_solution(self):
+        if self.solution is None:
+            raise ModelSolutionError("The model has not yet been run!")
+        return self.solution.copy()
+
+    def get_solution_final(self):
+        return self.get_solution().iloc[-1]
+
+    def get_rates(self):
+        rates = self.diagnose("reaction_rates")
+        rates.columns = ["t"] + [str(r_id) for r_id in self.chemistry.reactions_ids]
+        return rates
+
+    def get_rates_final(self):
+        return self.get_rates().iloc[-1]
+
+    def get_wall_fluxes(self):
+        fluxes = self.diagnose("wall_fluxes")
+        fluxes.columns = ["t"] + [str(sp_id) for sp_id in self.chemistry.species_ids]
+        return fluxes
+
+    def get_wall_fluxes_final(self):
+        return self.get_wall_fluxes().iloc[-1]

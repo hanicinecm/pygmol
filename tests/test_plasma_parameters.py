@@ -5,7 +5,6 @@ from pygmol.plasma_parameters import (
     validate_plasma_parameters,
     sanitize_power_series,
 )
-
 from .resources import DefaultParamsStat, DefaultParamsDyn, DefaultParamsMinimal
 
 

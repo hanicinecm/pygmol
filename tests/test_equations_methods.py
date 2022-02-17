@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-import pygmol
 from pygmol.equations import ElectronEnergyEquations
 from .resources import DefaultChemistry, DefaultParamsStat, DefaultParamsDyn
 
@@ -30,14 +29,14 @@ def test_get_total_density(y):
 
 
 def test_get_total_pressure(y, monkeypatch):
-    monkeypatch.setattr(pygmol.equations, "k", 42)
+    monkeypatch.setattr(equations, "k", 42)
     assert equations.get_total_pressure(y) == 10 * 42 * 700
     assert equations.get_total_pressure(y, n_tot=42.0) == 42 * 42 * 700
 
 
 def test_get_ion_temperature(y, monkeypatch):
-    monkeypatch.setattr(pygmol.equations, "e", 1)
-    monkeypatch.setattr(pygmol.equations, "k", 1)
+    monkeypatch.setattr(equations, "e", 1)
+    monkeypatch.setattr(equations, "k", 1)
     assert equations.get_ion_temperature(y, p=0.0) == 0.5
     monkeypatch.setattr(equations, "get_total_pressure", lambda _: 0.0)
     assert equations.get_ion_temperature(y) == 0.5

@@ -1,8 +1,7 @@
+import numpy as np
 import pytest
 
 from pygmol.chemistry import validate_chemistry, ChemistryValidationError
-import numpy as np
-
 from .resources import DefaultChemistry
 
 
