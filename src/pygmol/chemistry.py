@@ -38,6 +38,11 @@ def validate_chemistry(chemistry: Chemistry):
 
     TODO: Implement validation of the values - non-negativity etc.
 
+    Parameters
+    ----------
+    chemistry : Chemistry
+        Object defining the chemistry set.
+
     Raises
     ------
     ChemistryValidationError

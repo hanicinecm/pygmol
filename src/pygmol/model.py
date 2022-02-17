@@ -1,5 +1,6 @@
-"""
-TODO: module docstring!
+"""A module providing the `Model` class representing the global model and tying together
+all the other classes defined in the `pygmol` package (concrete subclasses of
+`Chemistry`, `PlasmaParameters` and `Equations`.)
 """
 from typing import Union, Mapping
 

@@ -125,7 +125,16 @@ class ElectronEnergyEquations(Equations):
     def initialize_equations(
         self, chemistry: Chemistry = None, plasma_params: PlasmaParameters = None
     ):
-        """"""
+        """Method initializing all the static and dynamic instance attributes used
+        by all the methods ultimately leading the the final `ode_system_rhs` property.
+
+        Parameters
+        ----------
+        chemistry : Chemistry
+            Class encoding the chemistry set, such as species, reactions, etc.
+        plasma_params : PlasmaParameters
+            Class encoding the plasma parameters, such as pressure, power, etc.
+        """
         if chemistry is None:
             chemistry = self.chemistry
         if plasma_params is None:
