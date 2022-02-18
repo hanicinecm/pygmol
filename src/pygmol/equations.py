@@ -35,6 +35,7 @@ class ElectronEnergyEquations(Equations):
     num_reactions : int
     sp_charges : ndarray[int64]
     sp_masses : ndarray[float64]
+    sp_lj_sigma_coefficients : ndarray[float64]
     sp_reduced_mass_matrix : ndarray[float64]
     sp_flows : ndarray[float64]
     sp_surface_sticking_coefficients : ndarray[float64]
@@ -96,6 +97,7 @@ class ElectronEnergyEquations(Equations):
         self.num_reactions = None
         self.sp_charges = None
         self.sp_masses = None
+        self.sp_lj_sigma_coefficients = None
         self.sp_reduced_mass_matrix = None
         self.sp_flows = None
         self.sp_mean_velocities = None
@@ -151,12 +153,15 @@ class ElectronEnergyEquations(Equations):
         self.num_species = len(chemistry.species_ids)
         self.num_reactions = len(chemistry.reactions_ids)
         self.sp_charges = np.array(chemistry.species_charges)
-        self.sp_masses = np.array(chemistry.species_masses)
+        self.sp_masses = np.array(chemistry.species_masses) * self.atomic_mass
         m_i = self.sp_masses[:, np.newaxis]
         m_k = self.sp_masses[np.newaxis, :]
         self.sp_reduced_mass_matrix = m_i * m_k / (m_i + m_k)
+        self.sp_lj_sigma_coefficients = (
+            np.array(chemistry.species_lj_sigma_coefficients) * 1.0e-10
+        )
         self.sp_flows = np.array(
-            plasma_params.feeds.get(sp_id, 0.0) for sp_id in chemistry.species_ids
+            [plasma_params.feeds.get(sp_id, 0.0) for sp_id in chemistry.species_ids]
         )
         self.sp_surface_sticking_coefficients = np.array(
             chemistry.species_surface_sticking_coefficients
@@ -176,8 +181,8 @@ class ElectronEnergyEquations(Equations):
             chemistry.reactions_electron_stoich_rhs
         ) - np.array(chemistry.reactions_electron_stoich_lhs)
         self.r_stoichiomatrix_net = np.array(
-            chemistry.reactions_species_stoichiomatrix_lhs
-        ) - np.array(chemistry.reactions_species_stoichiomatrix_rhs)
+            chemistry.reactions_species_stoichiomatrix_rhs
+        ) - np.array(chemistry.reactions_species_stoichiomatrix_lhs)
         self.r_stoichiomatrix_all_lhs = np.c_[
             chemistry.reactions_electron_stoich_lhs,
             chemistry.reactions_species_stoichiomatrix_lhs,
@@ -220,8 +225,8 @@ class ElectronEnergyEquations(Equations):
             8 * self.k * self.temp_n / (self.pi * self.sp_masses[self.mask_sp_neutral])
         ) ** 0.5  # this bit stays static
         self.sp_sigma_sc = (
-            np.array(chemistry.species_lj_sigma_coefficients)[:, np.newaxis]
-            + np.array(chemistry.species_lj_sigma_coefficients)[np.newaxis, :]
+            self.sp_lj_sigma_coefficients[:, np.newaxis]
+            + self.sp_lj_sigma_coefficients[np.newaxis, :]
         ) ** 2
         # placeholder for rutherford scattering:
         self.sp_sigma_sc[np.ix_(~self.mask_sp_neutral, ~self.mask_sp_neutral)] = np.nan
@@ -780,7 +785,11 @@ class ElectronEnergyEquations(Equations):
         if self.diffusion_model == 0:
             return -diff_c * n * s / self.diff_l**2 * self.volume / self.area
         elif self.diffusion_model == 1:
-            return -diff_c * n * s / (s * self.diff_l + (4 * diff_c / v_m))
+            wall_fluxes = -diff_c * n * s  # just the numerator
+            wall_fluxes[s != 0] /= (s * self.diff_l + (4 * diff_c / v_m))[s != 0]
+            # `diff_c` is 0.0 for negative ions, which would lead to division by 0 for
+            # non-sticking negative ions, therefore dividing only for non-zero sticking
+            return wall_fluxes
         else:
             raise ValueError("Unsupported diffusion model!")
 
@@ -1427,8 +1436,10 @@ class ElectronEnergyEquations(Equations):
 
         if initial_densities is not None:
             n0 = np.array(
-                initial_densities.get(sp_id, 0.0)
-                for sp_id in self.chemistry.species_ids
+                [
+                    initial_densities.get(sp_id, 0.0)
+                    for sp_id in self.chemistry.species_ids
+                ]
             )
             n0 = n0 / sum(n0) * n_tot
             n_e = sum(n0 * self.sp_charges)

@@ -51,6 +51,11 @@ class Model:
         The model instance solves for the equations defined by the
         `ElectronEnergyEquations` class.
 
+        Parameters
+        ----------
+        chemistry : Chemistry
+        plasma_params : PlasmaParameters
+
         Raises
         ------
         ChemistryValidationError
@@ -142,6 +147,9 @@ class Model:
         ------
         ModelSolutionError
             If the `solution_raw` is None (not populated yet).
+
+        TODO: This is way too slow, should take around 0.01 s instead of 0.44 s for
+              the test case!
         """
         if self.solution_raw is None:
             raise ModelSolutionError("The solver has not yet been run!")
@@ -149,7 +157,7 @@ class Model:
         self.t = self.solution_raw.t
         self.solution_primary = self.solution_raw.y.T
         solution_labels = self.equations.final_solution_labels
-        self.solution = DataFrame(columns=["t"] + solution_labels)
+        self.solution = DataFrame(columns=["t"] + solution_labels, dtype=float)
         for i, (t_i, y_i) in enumerate(zip(self.t, self.solution_primary)):
             self.solution.loc[i, "t"] = t_i
             self.solution.loc[
@@ -185,16 +193,18 @@ class Model:
                 )
             # is there a room for any electrons?
             n0 = np.array(
-                initial_densities.get(sp_id, 0.0)
-                for sp_id in self.chemistry.species_ids
+                [
+                    initial_densities.get(sp_id, 0.0)
+                    for sp_id in self.chemistry.species_ids
+                ]
             )
             if sum(n0 * self.equations.sp_charges) < 0:
                 raise ModelSolutionError(
                     "Total initial charge density is negative! No room for electrons!"
                 )
 
-        y0 = self.equations.get_y0_default(initial_densities=initial_densities)
         self._initialize_equations()
+        y0 = self.equations.get_y0_default(initial_densities=initial_densities)
         self._solve(y0=y0)
         if not self.success():
             raise ModelSolutionError(self.solution_raw.message)

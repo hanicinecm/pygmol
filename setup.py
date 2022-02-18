@@ -8,7 +8,7 @@ long_description = (root / "README.rst").read_text(encoding="utf-8")
 
 setup(
     name="pygmol",
-    version="0.0.1",
+    version="1.0.0",
     description="A plasma global model in python",
     long_description=long_description,
     long_description_content_type="text/x-rst",
@@ -16,7 +16,7 @@ setup(
     author="Martin Hanicinec",
     author_email="hanicinecm@gmail.com",
     classifiers=[
-        "Development Status :: 1 - Planning",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Physics",
         "Topic :: Scientific/Engineering :: Chemistry",

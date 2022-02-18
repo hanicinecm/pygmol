@@ -380,6 +380,7 @@ class Equations(ABC):
     k = constants.k
     e = constants.e
     epsilon_0 = constants.epsilon_0
+    atomic_mass = constants.atomic_mass
 
     @abstractmethod
     def __init__(self, chemistry: Chemistry, plasma_params: PlasmaParameters):
