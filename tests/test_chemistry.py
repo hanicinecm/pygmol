@@ -1,8 +1,15 @@
+import inspect
+
 import numpy as np
 import pytest
 
-from pygmol.chemistry import validate_chemistry, ChemistryValidationError
-from .resources import DefaultChemistry
+from pygmol.abc import Chemistry
+from pygmol.chemistry import (
+    validate_chemistry,
+    ChemistryValidationError,
+    chemistry_from_dict,
+)
+from .resources import DefaultChemistry, DefaultChemistryMinimal
 
 
 def test_default_chemistry():
@@ -79,3 +86,65 @@ def test_incorrect_return_matrix_shape():
         validate_chemistry(DefaultChemistry(species_surface_return_matrix=misshapen1))
     with pytest.raises(ChemistryValidationError):
         validate_chemistry(DefaultChemistry(species_surface_return_matrix=misshapen2))
+
+
+def test_defaults():
+    chem = DefaultChemistryMinimal()
+    assert list(chem.species_charges) == [0, 1]
+    assert np.isclose(chem.species_masses, [39.95, 39.95], rtol=0.0001).all()
+    assert list(chem.species_lj_sigma_coefficients) == [3, 3]
+    assert list(chem.species_surface_sticking_coefficients) == [0, 1]
+
+
+@pytest.fixture
+def chem_dict():
+    return {
+        attr: val
+        for attr, val in inspect.getmembers(DefaultChemistry)
+        if not attr.startswith("_")
+    }
+
+
+def test_chemistry_from_dict_valid(chem_dict):
+    chemistry = chemistry_from_dict(chem_dict)
+    assert isinstance(chemistry, Chemistry)
+    for attr, val in inspect.getmembers(DefaultChemistry):
+        if not attr.startswith("_"):
+            assert chem_dict[attr] == val
+            assert getattr(chemistry, attr) == val
+
+
+@pytest.mark.parametrize(
+    "mandatory_attribute",
+    [
+        "species_ids",
+        "reactions_ids",
+        "species_surface_return_matrix",
+        "reactions_arrh_a",
+        "reactions_species_stoichiomatrix_lhs",
+    ],
+)
+def test_chemistry_from_dict_invalid(mandatory_attribute, chem_dict):
+    chem_dict = {
+        key: val for key, val in chem_dict.items() if key != mandatory_attribute
+    }
+    # chemistry dict missing one of the abstract attributes, must raise TypeError
+    with pytest.raises(TypeError):
+        chemistry_from_dict(chem_dict)
+
+
+def test_chemistry_from_dict_defaults(chem_dict):
+    optional_attributes = {
+        "species_charges",
+        "species_masses",
+        "species_lj_sigma_coefficients",
+        "species_surface_sticking_coefficients",
+    }
+    chem_dict = {
+        key: val for key, val in chem_dict.items() if key not in optional_attributes
+    }
+    chem = chemistry_from_dict(chem_dict)
+    assert list(chem.species_charges) == [0, 1]
+    assert np.isclose(chem.species_masses, [39.95, 39.95], rtol=0.0001).all()
+    assert list(chem.species_lj_sigma_coefficients) == [3, 3]
+    assert list(chem.species_surface_sticking_coefficients) == [0, 1]

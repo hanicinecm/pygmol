@@ -6,17 +6,33 @@ import numpy as np
 from .abc import Chemistry
 
 
-# noinspection PyAbstractClass
-class ChemistryFromDict(Chemistry):
-    """A `Chemistry` subclass built from a dictionary passed.
+def chemistry_from_dict(chemistry_dict: dict) -> Chemistry:
+    """Concrete Chemistry subclass instance factory.
 
-    The `chemistry_dict` needs to mirror the interface defined by the `Chemistry` ABC.
+    Creates a concrete subclass of the `Chemistry` ABC and sets all the
+    (key, value) pairs passed down in `chemistry_dict` as class attributes.
+    Returns an *instance* of the new concrete type. If the `chemistry_dict` omits
+    any of the abstract properties of `Chemistry`, an usual TypeError will be
+    raised on instantiation.
+
+    Parameters
+    ----------
+    chemistry_dict : dict
+
+    Returns
+    -------
+    Chemistry
+        Instance of a dynamically created *concrete subclass* of the `Chemistry` ABC.
+
+    Raises
+    ------
+    TypeError
+        If the `chemistry_dict` does not adhere to the interface defined by the
+        `Chemistry` ABC.
     """
-
-    def __init__(self, chemistry_dict: dict, *args, **kwargs):
-        for attr, val in chemistry_dict.items():
-            setattr(self, attr, val)
-        super().__init__(*args, **kwargs)
+    concrete_class = type("ChemistryFromDict", (Chemistry,), chemistry_dict)
+    concrete_instance = concrete_class()
+    return concrete_instance
 
 
 class ChemistryValidationError(Exception):

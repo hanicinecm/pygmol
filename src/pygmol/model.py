@@ -11,7 +11,7 @@ from pandas import DataFrame
 from scipy.integrate import solve_ivp
 
 from .abc import Chemistry, PlasmaParameters
-from .chemistry import ChemistryFromDict, validate_chemistry
+from .chemistry import chemistry_from_dict, validate_chemistry
 from .equations import ElectronEnergyEquations
 from .plasma_parameters import (
     plasma_parameters_from_dict,
@@ -64,7 +64,7 @@ class Model:
             Signals inconsistent plasma parameters passed.
         """
         if isinstance(chemistry, dict):
-            chemistry = ChemistryFromDict(chemistry_dict=chemistry)
+            chemistry = chemistry_from_dict(chemistry)
         if isinstance(plasma_params, dict):
             plasma_params = plasma_parameters_from_dict(plasma_params)
 
