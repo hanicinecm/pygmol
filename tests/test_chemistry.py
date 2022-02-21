@@ -148,3 +148,23 @@ def test_chemistry_from_dict_defaults(chem_dict):
     assert np.isclose(chem.species_masses, [39.95, 39.95], rtol=0.0001).all()
     assert list(chem.species_lj_sigma_coefficients) == [3, 3]
     assert list(chem.species_surface_sticking_coefficients) == [0, 1]
+
+
+def test_incompatible_defaults(chem_dict):
+    optional_attributes = {
+        "species_charges",
+        "species_masses",
+        "species_lj_sigma_coefficients",
+        "species_surface_sticking_coefficients",
+    }
+    chem_dict = {
+        key: val for key, val in chem_dict.items() if key not in optional_attributes
+    }
+    chem_dict["species_ids"] = ["Ar", "Arr+"]
+    chemistry = chemistry_from_dict(chem_dict)
+    with pytest.raises(NotImplementedError):
+        _ = chemistry.species_charges
+    with pytest.raises(NotImplementedError):
+        _ = chemistry.species_masses
+    with pytest.raises(NotImplementedError):
+        _ = chemistry.species_surface_sticking_coefficients
