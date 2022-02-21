@@ -22,15 +22,20 @@ def plasma_params():
     return ExamplePlasmaParameters()
 
 
-def solutions_match(sol1: Series, sol2: Series) -> bool:
+def solutions_match(sol_given: Series, sol_expected: Series) -> bool:
     n0 = 1.0e2
     chem = ExampleChemistry
     species = chem.species_ids
     # filtering out effectively zero densities...
     mask = [
-        False if (col in species and sol1[col] <= n0) else True for col in sol1.index
+        False if (col in species and sol_given[col] <= n0) else True
+        for col in sol_given.index
     ]
-    return np.isclose(sol1[mask].values, sol2[mask].values, rtol=1.0e-4).all()
+    print("solution expected:")
+    print(",".join(str(v) for v in sol_expected.values))
+    print("solution given:")
+    print(",".join(str(v) for v in sol_given.values))
+    return np.isclose(sol_given[mask].values, sol_expected[mask].values, rtol=1.0e-4).all()
 
 
 def solution_expected(model: Model, test_case: str) -> bool:
@@ -39,8 +44,6 @@ def solution_expected(model: Model, test_case: str) -> bool:
 
 def run(model):
     model.run()
-    print(",".join(col for col in model.get_solution_final().index), ":")
-    print(",".join(str(v) for v in model.get_solution_final().values))
 
 
 def test_all_example_solutions_unique():
