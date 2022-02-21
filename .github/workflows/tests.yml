@@ -1,4 +1,4 @@
-name: unit tests
+name: tests
 
 on:
   push:
@@ -28,14 +28,17 @@ jobs:
         coverage run -m pytest tests
         coverage report
         coverage xml
-    - name: Test with pytest
-      run: |
-        pytest
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
       with:
         fail_ci_if_error: true
         verbose: true
+    - name: Unit tests including docs
+      run: |
+        pytest
+    - name: Run tests
+      run: |
+        pytest run_tests/ -v
     - name: Check code format
       run: |
         black --check .
