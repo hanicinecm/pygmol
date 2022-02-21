@@ -39,7 +39,7 @@ def solutions_match(
         print("solution given:")
         print(",".join(str(v) for v in sol_given.values))
     return np.isclose(
-        sol_given[mask].values, sol_expected[mask].values, rtol=1.0e-3
+        sol_given[mask].values, sol_expected[mask].values, rtol=1.0e-4
     ).all()
 
 
@@ -51,11 +51,11 @@ def run(model):
     model.run()
 
 
-# def test_all_example_solutions_unique():
-#     for index1, index2 in combinations(solutions.index, 2):
-#         assert not solutions_match(
-#             solutions.loc[index1], solutions.loc[index2], verbose=False
-#         )
+def test_all_example_solutions_unique():
+    for index1, index2 in combinations(solutions.index, 2):
+        assert not solutions_match(
+            solutions.loc[index1], solutions.loc[index2], verbose=False
+        )
 
 
 def test_nominal_solution(chemistry, plasma_params):

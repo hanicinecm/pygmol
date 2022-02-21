@@ -36,9 +36,6 @@ jobs:
     - name: Unit tests including docs
       run: |
         pytest
-    - name: Run tests
-      run: |
-        pytest run_tests/ -vs
     - name: Check code format
       run: |
         black --check .
