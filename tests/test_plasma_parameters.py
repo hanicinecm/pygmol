@@ -2,10 +2,28 @@ import pytest
 
 from pygmol.plasma_parameters import (
     PlasmaParametersValidationError,
+    plasma_parameters_from_dict,
     validate_plasma_parameters,
     sanitize_power_series,
 )
+from pygmol.abc import PlasmaParameters
+
 from .resources import DefaultParamsStat, DefaultParamsDyn, DefaultParamsMinimal
+
+
+@pytest.fixture
+def params_dict():
+    return {
+        "radius": 0.42,
+        "length": 0.42,
+        "pressure": 0.42,
+        "power": [0.0, 420.0],
+        "t_power": [0.0, 0.042],
+        "feeds": {"Ar": 420.0},
+        "temp_e": 0.42,
+        "temp_n": 420.0,
+        "t_end": 0.042,
+    }
 
 
 def test_params_static_valid():
@@ -132,3 +150,40 @@ def test_sanitize_power_series():
         [-float("inf"), 0.05, float("inf")],
         [42, 42, 42],
     ]
+
+
+@pytest.mark.parametrize("power,t_power", [([0, 420], [0, 0.42]), (420, None)])
+def test_params_from_dict_valid(power, t_power, params_dict):
+    params_dict["power"] = power
+    params_dict["t_power"] = t_power
+    params = plasma_parameters_from_dict(params_dict)
+    assert isinstance(params, PlasmaParameters)
+    assert params.radius == 0.42
+    assert params.length == 0.42
+    assert params.pressure == 0.42
+    assert params.power == power
+    assert params.t_power == t_power
+    assert params.feeds == {"Ar": 420}
+    assert params.temp_e == 0.42
+    assert params.temp_n == 420
+    assert params.t_end == 0.042
+
+
+@pytest.mark.parametrize("missing_attrib", ["radius", "length", "pressure", "power"])
+def test_params_from_dict_invalid(missing_attrib, params_dict):
+    params_dict = {
+        key: params_dict[key] for key in params_dict if key != missing_attrib
+    }
+    # params_dict missing one of the abstract attributes, must raise TypeError
+    with pytest.raises(TypeError):
+        plasma_parameters_from_dict(params_dict)
+
+
+def test_params_from_dict_defaults():
+    params_dict = {"radius": 1, "length": 1, "pressure": 1, "power": 1}
+    params_instance = plasma_parameters_from_dict(params_dict)
+    assert params_instance.t_power is None
+    assert params_instance.feeds == {}
+    assert params_instance.temp_e == 1.0
+    assert params_instance.temp_n == 300.0
+    assert params_instance.t_end == 1.0

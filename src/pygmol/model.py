@@ -14,7 +14,7 @@ from .abc import Chemistry, PlasmaParameters
 from .chemistry import ChemistryFromDict, validate_chemistry
 from .equations import ElectronEnergyEquations
 from .plasma_parameters import (
-    PlasmaParametersFromDict,
+    plasma_parameters_from_dict,
     validate_plasma_parameters,
     PlasmaParametersValidationError,
 )
@@ -66,7 +66,7 @@ class Model:
         if isinstance(chemistry, dict):
             chemistry = ChemistryFromDict(chemistry_dict=chemistry)
         if isinstance(plasma_params, dict):
-            plasma_params = PlasmaParametersFromDict(plasma_params_dict=plasma_params)
+            plasma_params = plasma_parameters_from_dict(plasma_params)
 
         self.chemistry = chemistry
         self.plasma_params = plasma_params

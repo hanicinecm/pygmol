@@ -11,18 +11,36 @@ from numpy import ndarray
 from .abc import PlasmaParameters
 
 
-# noinspection PyAbstractClass
-class PlasmaParametersFromDict(PlasmaParameters):
-    """A `PlasmaParameters` subclass built from a dictionary passed.
+def plasma_parameters_from_dict(plasma_params_dict: dict) -> PlasmaParameters:
+    """Concrete PlasmaParameters subclass instance factory.
 
-    The `plasma_params` needs to mirror the interface defined by the `PlasmaParameters`
-    ABC.
+    Creates a concrete subclass of the `PlasmaParameters` ABC and defines all the
+    (key, value) pairs passed down in `plasma_params_dict` as class attributes.
+    Returns an *instance* of the new concrete type. If the `plasma_params_dict` omits
+    any of the abstract properties of `PlasmaParameters`, an usual TypeError will be
+    raised on instantiation.
+
+    Parameters
+    ----------
+    plasma_params_dict : dict
+
+    Returns
+    -------
+    PlasmaParameters
+        Instance of a dynamically created *concrete subclass* of the `PlasmaParameters`
+        ABC.
+
+    Raises
+    ------
+    TypeError
+        If the `plasma_params_dict` does not adhere to the interface defined by
+        `PlasmaParameters` ABC.
     """
-
-    def __init__(self, plasma_params_dict: dict, *args, **kwargs):
-        for attr, val in plasma_params_dict.items():
-            setattr(self, attr, val)
-        super().__init__(*args, **kwargs)
+    concrete_class = type(
+        "PlasmaParametersFromDict", (PlasmaParameters,), plasma_params_dict
+    )
+    concrete_instance = concrete_class()
+    return concrete_instance
 
 
 class PlasmaParametersValidationError(Exception):
