@@ -2,11 +2,10 @@ from itertools import combinations
 import inspect
 
 import numpy as np
-
+from pandas import Series
 from pygmol.model import Model
 from pygmol.equations import ElectronEnergyEquations
 from pytest import fixture
-from numpy import ndarray
 
 from .resources.example_chemistry import ExampleChemistry
 from .resources.example_plasma_parameters import ExamplePlasmaParameters
@@ -23,16 +22,19 @@ def plasma_params():
     return ExamplePlasmaParameters()
 
 
-def solutions_match(sol1: ndarray, sol2: ndarray) -> bool:
-    zero_eff = 1.0e2
+def solutions_match(sol1: Series, sol2: Series) -> bool:
+    n0 = 1.0e2
+    chem = ExampleChemistry
+    species = chem.species_ids
     # filtering out effectively zero densities...
-    print(sol1[sol1 > zero_eff])
-    print(sol2[sol1 > zero_eff])
-    return np.isclose(sol1[sol1 > zero_eff], sol2[sol1 > zero_eff], rtol=5.0e-4).all()
+    mask = [
+        False if (col in species and sol1[col] <= n0) else True for col in sol1.index
+    ]
+    return np.isclose(sol1[mask].values, sol2[mask].values, rtol=1.0e-4).all()
 
 
 def solution_expected(model: Model, test_case: str) -> bool:
-    return solutions_match(model.solution_primary[-1], solutions.loc[test_case].values)
+    return solutions_match(model.get_solution_final(), solutions.loc[test_case])
 
 
 # noinspection PyProtectedMember
@@ -40,11 +42,12 @@ def run(model):
     model._initialize_equations()
     model._solve()
     model._build_solution()
+    # print(",".join(str(v) for v in model.get_solution_final().values))
 
 
 def test_all_example_solutions_unique():
-    for sol1, sol2 in combinations(solutions.values, 2):
-        assert not solutions_match(sol1, sol2)
+    for index1, index2 in combinations(solutions.index, 2):
+        assert not solutions_match(solutions.loc[index1], solutions.loc[index2])
 
 
 def test_nominal_solution(chemistry, plasma_params):
@@ -60,14 +63,13 @@ def test_solution_feeds(chemistry, plasma_params):
     assert solution_expected(model, "feeds")
 
 
-def test_solution_sticking1(chemistry, plasma_params, monkeypatch):
-    plasma_params.feeds = {"Ar": 100, "O": 100}
+def test_solution_sticking1(chemistry, plasma_params):
+    plasma_params.feeds = {"Ar": 200, "O": 200}
     # set sticking coefficients for all the ions and excited species to 1.0:
     chemistry.species_surface_sticking_coefficients = [
         1.0 if sp_id[-1] in "+-*" else 0.0 for sp_id in chemistry.species_ids
     ]
     model = Model(chemistry, plasma_params)
-    monkeypatch.setattr(ElectronEnergyEquations, "diffusion_model", 0)
     run(model)
     assert solution_expected(model, "sticking1")
 
@@ -81,7 +83,10 @@ def test_solution_sticking2(chemistry, plasma_params, monkeypatch):
     model = Model(chemistry, plasma_params)
     monkeypatch.setattr(ElectronEnergyEquations, "diffusion_model", 0)
     run(model)
-    assert solution_expected(model, "sticking2")
+    assert solution_expected(model, "sticking2_diff0")
+    monkeypatch.setattr(ElectronEnergyEquations, "diffusion_model", 1)
+    run(model)
+    assert solution_expected(model, "sticking2_diff1")
 
 
 def test_solution_return1(chemistry, plasma_params, monkeypatch):
@@ -100,10 +105,13 @@ def test_solution_return1(chemistry, plasma_params, monkeypatch):
     model = Model(chemistry, plasma_params)
     monkeypatch.setattr(ElectronEnergyEquations, "diffusion_model", 0)
     run(model)
-    assert solution_expected(model, "return1")
+    assert solution_expected(model, "return1_diff0")
+    monkeypatch.setattr(ElectronEnergyEquations, "diffusion_model", 1)
+    run(model)
+    assert solution_expected(model, "return1_diff1")
 
 
-def test_solution_return2(chemistry, plasma_params, monkeypatch):
+def test_solution_return2(chemistry, plasma_params):
     plasma_params.feeds = {"Ar": 100, "O": 100}
     stick_coefs = {"O-": 1, "O--": 1, "Ar+": 1, "Ar++": 1, "Ar*": 1, "Ar**": 1}
     chemistry.species_surface_sticking_coefficients = [
@@ -125,12 +133,11 @@ def test_solution_return2(chemistry, plasma_params, monkeypatch):
                 stick_sp
             ][ret_sp]
     model = Model(chemistry, plasma_params)
-    monkeypatch.setattr(ElectronEnergyEquations, "diffusion_model", 0)
     run(model)
     assert solution_expected(model, "return2")
 
 
-def test_solution_reduced_reactions(chemistry, plasma_params, monkeypatch):
+def test_solution_reduced_reactions(chemistry, plasma_params):
     removed_reactions_ids = {3, 4, 12}
     mask = [r_id not in removed_reactions_ids for r_id in chemistry.reactions_ids]
     for attr, val in inspect.getmembers(chemistry):
@@ -141,7 +148,7 @@ def test_solution_reduced_reactions(chemistry, plasma_params, monkeypatch):
     assert solution_expected(model, "reduced_reactions")
 
 
-def test_solution_adhoc_k(chemistry, plasma_params, monkeypatch):
+def test_solution_adhoc_k(chemistry, plasma_params):
     increase_k = {10, 20, 30}
     for i, r_id in enumerate(chemistry.reactions_ids):
         if r_id in increase_k:
