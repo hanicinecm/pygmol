@@ -68,16 +68,9 @@ class Model:
         if isinstance(plasma_params, dict):
             plasma_params = PlasmaParametersFromDict(plasma_params_dict=plasma_params)
 
-        # validations:
-        validate_chemistry(chemistry)
-        validate_plasma_parameters(plasma_params)
-        if not set(plasma_params.feeds).issubset(chemistry.species_ids):
-            raise PlasmaParametersValidationError(
-                "Feed gas species defined in the plasma parameters are inconsistent "
-                "with the chemistry species ids!"
-            )
         self.chemistry = chemistry
         self.plasma_params = plasma_params
+        self._validate_chemistry_and_plasma_parameters()
 
         # placeholder for the equations employed by the model:
         self.equations = None
@@ -89,6 +82,15 @@ class Model:
         self.solution_primary = None
         # `pandas.DataFrame` of all the final solution values:
         self.solution = None
+
+    def _validate_chemistry_and_plasma_parameters(self):
+        validate_chemistry(self.chemistry)
+        validate_plasma_parameters(self.plasma_params)
+        if not set(self.plasma_params.feeds).issubset(self.chemistry.species_ids):
+            raise PlasmaParametersValidationError(
+                "Feed gas species defined in the plasma parameters are inconsistent "
+                "with the chemistry species ids!"
+            )
 
     def _initialize_equations(self):
         self.equations = ElectronEnergyEquations(self.chemistry, self.plasma_params)

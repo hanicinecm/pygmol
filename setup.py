@@ -8,7 +8,7 @@ long_description = (root / "README.rst").read_text(encoding="utf-8")
 
 setup(
     name="pygmol",
-    version="1.0.0",
+    version="1.0.1",
     description="A plasma global model in python",
     long_description=long_description,
     long_description_content_type="text/x-rst",

@@ -1,8 +1,10 @@
-|Test action| |Test coverage| |GitHub license| |PyPI version| |PyPI pyversions| |Code style|
+|Unit-test action| |Unit-test coverage| |GitHub license| |PyPI version| |PyPI pyversions| |Code style|
 
-.. |Test action| image:: https://github.com/hanicinecm/pygmol/workflows/tests/badge.svg
+.. |Unit-test action| image:: https://github.com/hanicinecm/pygmol/workflows/unit-tests/badge.svg
    :target: https://github.com/hanicinecm/pygmol/actions
-.. |Test coverage| image:: https://codecov.io/gh/hanicinecm/pygmol/branch/master/graph/badge.svg?token=TNKBDTVGFV
+.. |Run-test action| image:: https://github.com/hanicinecm/pygmol/workflows/run-tests/badge.svg
+   :target: https://github.com/hanicinecm/pygmol/actions
+.. |Unit-test coverage| image:: https://codecov.io/gh/hanicinecm/pygmol/branch/master/graph/badge.svg?token=TNKBDTVGFV
    :target: https://codecov.io/gh/hanicinecm/pygmol
 .. |GitHub license| image:: https://img.shields.io/github/license/hanicinecm/pygmol.svg
    :target: https://github.com/hanicinecm/pygmol/blob/master/LICENSE

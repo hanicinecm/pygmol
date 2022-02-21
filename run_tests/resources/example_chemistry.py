@@ -1,3 +1,6 @@
+import inspect
+from copy import deepcopy
+
 from pygmol.abc import Chemistry
 
 
@@ -410,3 +413,9 @@ class ExampleChemistry(Chemistry):
         [0, 0, 0, 0, 0, 0, 0, 1, 0],
         [0, 1, 0, 0, 0, 0, 0, 0, 0],
     ]
+
+    def __init__(self):
+        # save all the class attributes as instance attributes:
+        for attr, val in inspect.getmembers(ExampleChemistry):
+            if not attr[0].startswith("_"):
+                setattr(self, attr, deepcopy(getattr(ExampleChemistry, attr)))
