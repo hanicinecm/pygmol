@@ -58,6 +58,10 @@ def validate_plasma_parameters(params: PlasmaParameters):
     pressure, feed flows, etc, and inconsistent lengths of `params.power` and
     `params.t_power` if present.
 
+    Parameters
+    ----------
+    params : PlasmaParameters
+
     Raises
     ------
     PlasmaParametersValidationError
@@ -113,6 +117,16 @@ def sanitize_power_series(
 
     At this point consistency checks for monotonic behaviour and shapes should already
     have been done.
+
+    Parameters
+    ----------
+    t_power : Sequence of float, optional
+        Times [s] for the power values defined by the `power` sequence.
+    power : float or Sequence of float
+        Either a single power values in [W] if ``t_power is None``, or the power values
+        in [W] for each time in `t_power`
+    t_end : float
+        The end-of-simulation time in [sec].
     """
     # if the power is constant, return an interval covering -inf to +inf
     if t_power is None:

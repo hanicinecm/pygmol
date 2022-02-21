@@ -7,7 +7,6 @@ from typing import Union, Mapping
 import numpy as np
 import pandas
 from numpy import ndarray
-from pandas import DataFrame
 from scipy.integrate import solve_ivp
 
 from .abc import Chemistry, PlasmaParameters
@@ -84,6 +83,14 @@ class Model:
         self.solution = None
 
     def _validate_chemistry_and_plasma_parameters(self):
+        """Method running the validation on both chemistry and plasma parameters,
+        and checking if they are both consistent with each other.
+
+        Raises
+        ------
+        ChemistryValidationError
+        PlasmaParametersValidationError
+        """
         validate_chemistry(self.chemistry)
         validate_plasma_parameters(self.plasma_params)
         if not set(self.plasma_params.feeds).issubset(self.chemistry.species_ids):
@@ -93,6 +100,7 @@ class Model:
             )
 
     def _initialize_equations(self):
+        """Populates the equations instance attribute."""
         self.equations = ElectronEnergyEquations(self.chemistry, self.plasma_params)
 
     def _solve(self, y0: ndarray = None, method: str = "BDF"):
@@ -159,7 +167,7 @@ class Model:
         self.t = self.solution_raw.t
         self.solution_primary = self.solution_raw.y.T
         solution_labels = self.equations.final_solution_labels
-        self.solution = DataFrame(columns=["t"] + solution_labels, dtype=float)
+        self.solution = pandas.DataFrame(columns=["t"] + solution_labels, dtype=float)
         for i, (t_i, y_i) in enumerate(zip(self.t, self.solution_primary)):
             self.solution.loc[i, "t"] = t_i
             self.solution.loc[
@@ -185,6 +193,11 @@ class Model:
             for the solver. The densities are re-normalized to the total pressure
             downstream, so relative fractions are sufficient.
             If not passed, default is provided by `equations`.
+
+        Raises
+        ------
+        ModelSolutionError
+            If there is an error raised by the solver.
         """
         if initial_densities is not None:
             initial_densities = dict(initial_densities)
@@ -222,7 +235,7 @@ class Model:
         """
         return bool(self.solution_raw.success)
 
-    def diagnose(self, quantity: str, totals: bool = False) -> DataFrame:
+    def diagnose(self, quantity: str, totals: bool = False) -> pandas.DataFrame:
         """Fetch diagnostics of any of the `equations`' partial results for all the time
         samples from the finished primary solution.
 
@@ -272,31 +285,108 @@ class Model:
             diagnostics = diagnostics[np.newaxis].T
         labels = [f"col{i}" for i in range(1, diagnostics.shape[1] + 1)]
 
-        df = DataFrame(np.c_[self.t, diagnostics], columns=["t"] + labels)
+        df = pandas.DataFrame(np.c_[self.t, diagnostics], columns=["t"] + labels)
         if totals:
             df["total"] = diagnostics.sum(axis=1)
         return df
 
-    def get_solution(self):
+    def get_solution(self) -> pandas.DataFrame:
+        """Method returning the solution of the model in time.
+
+        The `run` method must have been called before this one.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The first column is ``"t"`` for time samples, other columns are determined
+            by the `equations` attribute, more specifically by the
+            `Equations.final_solution_labels` attribute.
+            Each row is for a single time sample.
+
+        Raises
+        ------
+        ModelSolutionError
+            If called before the `run` has been is called.
+        """
         if self.solution is None:
             raise ModelSolutionError("The model has not yet been run!")
         return self.solution.copy()
 
-    def get_solution_final(self):
+    def get_solution_final(self) -> pandas.Series:
+        """Method returning the final row of the solution of the model, corresponding
+        to the final time sample.
+
+        The `run` method must have been called before this one.
+
+        Returns
+        -------
+        pandas.Series
+            The first index is ``"t"`` for time sample, other indices are determined
+            by the `equations` attribute, more specifically by the
+            `Equations.final_solution_labels` attribute.
+
+        Raises
+        ------
+        ModelSolutionError
+            If called before the `run` has been is called.
+        """
         return self.get_solution().iloc[-1]
 
-    def get_rates(self):
+    def get_rates(self) -> pandas.DataFrame:
+        """Method returning the reaction rates in time for the solution of the model.
+
+        The `run` method must have been called before this one.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The first column is ``"t"`` for time samples, the other columns are strings
+            of the reaction ids (see `Chemistry.reactions_ids`).
+            Each row is for a single time sample.
+        """
         rates = self.diagnose("reaction_rates")
         rates.columns = ["t"] + [str(r_id) for r_id in self.chemistry.reactions_ids]
         return rates
 
-    def get_rates_final(self):
+    def get_rates_final(self) -> pandas.Series:
+        """Method returning the final reaction rates at the end of the model solution.
+
+        The `run` method must have been called before this one.
+
+        Returns
+        -------
+        pandas.Series
+            The first column is ``"t"`` for the time sample, the others are strings
+            of the reaction ids (see `Chemistry.reactions_ids`).
+        """
         return self.get_rates().iloc[-1]
 
-    def get_wall_fluxes(self):
+    def get_wall_fluxes(self) -> pandas.DataFrame:
+        """Method returning the wall fluxes in time for all the species in the
+        chemistry.
+
+        The `run` method must have been called before this one.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The first column is ``"t"`` for time samples, the other columns are strings
+            of the species ids (see `Chemistry.species_ids`).
+            Each row is for a single time sample.
+        """
         fluxes = self.diagnose("wall_fluxes")
         fluxes.columns = ["t"] + [str(sp_id) for sp_id in self.chemistry.species_ids]
         return fluxes
 
-    def get_wall_fluxes_final(self):
+    def get_wall_fluxes_final(self) -> pandas.Series:
+        """Method returning the final wall fluxes at the end of the model solution.
+
+        The `run` method must have been called before this one.
+
+        Returns
+        -------
+        pandas.Series
+            The first column is ``"t"`` for the time sample, the others are strings
+            of the species ids (see `Chemistry.reactions_ids`).
+        """
         return self.get_wall_fluxes().iloc[-1]
