@@ -37,12 +37,10 @@ def solution_expected(model: Model, test_case: str) -> bool:
     return solutions_match(model.get_solution_final(), solutions.loc[test_case])
 
 
-# noinspection PyProtectedMember
 def run(model):
-    model._initialize_equations()
-    model._solve()
-    model._build_solution()
-    # print(",".join(str(v) for v in model.get_solution_final().values))
+    model.run()
+    print(",".join(col for col in model.get_solution_final().index), ":")
+    print(",".join(str(v) for v in model.get_solution_final().values))
 
 
 def test_all_example_solutions_unique():
@@ -156,3 +154,35 @@ def test_solution_adhoc_k(chemistry, plasma_params):
     model = Model(chemistry, plasma_params)
     run(model)
     assert solution_expected(model, "adhoc_k")
+
+
+def test_solution_power_const(chemistry, plasma_params):
+    plasma_params.power = 50
+    model = Model(chemistry, plasma_params)
+    run(model)
+    assert solution_expected(model, "power_const")
+
+
+def test_solution_power_dyn(chemistry, plasma_params):
+    plasma_params.power = [5000, 5000, 0, 0]
+    plasma_params.t_power = [0, 1, 1, 1.001]
+    plasma_params.t_end = 1.001
+    model = Model(chemistry, plasma_params)
+    run(model)
+    assert solution_expected(model, "power_dyn")
+
+
+def test_solution_pressure(chemistry, plasma_params):
+    plasma_params.pressure = 10_000
+    model = Model(chemistry, plasma_params)
+    run(model)
+    assert solution_expected(model, "pressure")
+
+
+def test_solution_dimensions(chemistry, plasma_params):
+    plasma_params.radius = plasma_params.radius / 10
+    plasma_params.length = plasma_params.length / 10
+    plasma_params.power = plasma_params.power / 1000
+    model = Model(chemistry, plasma_params)
+    run(model)
+    assert solution_expected(model, "dimensions")
