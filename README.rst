@@ -1,4 +1,4 @@
-|Unit-test action| |Unit-test coverage| |GitHub license| |PyPI version| |PyPI pyversions| |Code style|
+|Unit-test action| |Run-test action| |Unit-test coverage| |GitHub license| |PyPI version| |PyPI pyversions| |Code style|
 
 .. |Unit-test action| image:: https://github.com/hanicinecm/pygmol/workflows/unit-tests/badge.svg
    :target: https://github.com/hanicinecm/pygmol/actions
