@@ -14,7 +14,7 @@ def test():
     nan_y = fun(np.float64(0), np.array([np.nan, np.nan, np.nan]))
     assert np.isnan(nan_y).all()
     final_labels = equations.final_solution_labels
-    assert list(final_labels) == ["Ar", "Ar+", "e", "T_e", "T_n", "p"]
+    assert list(final_labels) == ["Ar", "Ar+", "e", "T_e", "T_n", "p", "P"]
 
 
 # TODO: this is a dirty hack to get some test coverage, ideally I want to implement

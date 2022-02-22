@@ -172,7 +172,7 @@ class Model:
             self.solution.loc[i, "t"] = t_i
             self.solution.loc[
                 i, solution_labels
-            ] = self.equations.get_final_solution_values(y_i)
+            ] = self.equations.get_final_solution_values(t_i, y_i)
 
     def run(
         self,
@@ -256,6 +256,10 @@ class Model:
         additional column ``"total"`` is appended to the `DataFrame` summing all the
         other columns.
 
+        If the corresponding `get_{quantity}` getter method returns a scalar, the column
+        in the resulting dataframe (next to the "t" column) is labeled as the
+        `{quantity}` passed, rather than ``"col1"``.
+
         Parameters
         ----------
         quantity : str
@@ -268,7 +272,13 @@ class Model:
         Returns
         -------
         DataFrame
-            Columns are "t", "col1", ...[, "total"]. Index is arbitrary and irrelevant.
+            Columns are:
+                - either "t", "col1", ...[, "total"] for equations.get_{quantity}
+                  returning a 1D vector,
+                - or "t", "{quantity}" [, "total"] for equations.get_{quantity}
+                  returning a scalar. In this case the `totals` flag does not make
+                  any sense.
+            Index of the data frame is arbitrary and irrelevant.
         """
         if self.solution_primary is None:
             raise ModelSolutionError("The solver has not yet been run!")
@@ -339,7 +349,7 @@ class Model:
         """
         return self.get_solution().iloc[-1]
 
-    def get_rates(self) -> pandas.DataFrame:
+    def get_reaction_rates(self) -> pandas.DataFrame:
         """Method returning the reaction rates in time for the solution of the model.
 
         The `run` method must have been called before this one.
@@ -347,15 +357,17 @@ class Model:
         Returns
         -------
         pandas.DataFrame
-            The first column is ``"t"`` for time samples, the other columns are strings
-            of the reaction ids (see `Chemistry.reactions_ids`).
-            Each row is for a single time sample.
+            The first column is ``"t"`` for time samples, the other columns are integer
+            reaction ids (see `Chemistry.reactions_ids`). Each row is for a single time
+            sample.
         """
         rates = self.diagnose("reaction_rates")
-        rates.columns = ["t"] + [str(r_id) for r_id in self.chemistry.reactions_ids]
+        columns = ["t"]
+        columns.extend(self.chemistry.reactions_ids)
+        rates.columns = columns
         return rates
 
-    def get_rates_final(self) -> pandas.Series:
+    def get_reaction_rates_final(self) -> pandas.Series:
         """Method returning the final reaction rates at the end of the model solution.
 
         The `run` method must have been called before this one.
@@ -363,10 +375,10 @@ class Model:
         Returns
         -------
         pandas.Series
-            The first column is ``"t"`` for the time sample, the others are strings
-            of the reaction ids (see `Chemistry.reactions_ids`).
+            The first column is ``"t"`` for the time sample, the other columns are
+            integer reaction ids (see `Chemistry.reactions_ids`).
         """
-        return self.get_rates().iloc[-1]
+        return self.get_reaction_rates().iloc[-1]
 
     def get_wall_fluxes(self) -> pandas.DataFrame:
         """Method returning the wall fluxes in time for all the species in the
@@ -397,3 +409,65 @@ class Model:
             of the species ids (see `Chemistry.reactions_ids`).
         """
         return self.get_wall_fluxes().iloc[-1]
+
+    def get_volumetric_rates_matrix(
+        self, t: float = None, annotate: bool = False
+    ) -> pandas.DataFrame:
+        """Method returning a data frame of all the *volumetric rates of change* of
+        each and every *heavy species* due to each and every reaction.
+
+        Each row correspond to a single reaction in the chemistry set and each column
+        correspond to a single heavy species in the chemistry set. All the values are
+        the volumetric rates of change (positive for volumetric sources / production or
+        negative for volumetric sinks / consumption) of the densities of all the
+        species. All the values are in [m-3/s] (assuming the
+        `equations.get_reaction_rates` method returns results in the same units, as
+        it should.)
+
+        The rows are indexed by reaction ids (see `Chemistry.reactions_ids` method of
+        the chemistry abstract base class), or, if ``annotate=True`` flag passed, by the
+        reaction strings (see `Chemistry.reactions_strings` method of the chemistry
+        ABC.)
+
+        The columns are indexed by the species ids (see `Chemistry.species_ids` method
+        of the chemistry abstract base class).
+
+        Parameters
+        ----------
+        t : float, optional
+            Time in [sec]. The closest existing time sample from the existing solution
+            will be selected, but no interpolation will be performed.
+            If not passed, the final time frame is selected.
+        annotate : bool, optional, defaults to False
+            If True passed, the resulting dataframe will be indexed by the reaction
+            strings, rather than reaction ids.
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
+        if self.solution_primary is None:
+            raise ModelSolutionError("The solver has not yet been run!")
+
+        stoichiomatrix = np.array(
+            self.chemistry.reactions_species_stoichiomatrix_rhs
+        ) - np.array(self.chemistry.reactions_species_stoichiomatrix_lhs)
+
+        if t is None:
+            rates_frame = self.get_reaction_rates_final()
+        else:
+            rates = self.get_reaction_rates()
+            t_index = abs(rates["t"] - t).idxmin()
+            rates_frame = rates.loc[t_index]
+        # get rid of the time in rates:
+        rates_frame = rates_frame.iloc[1:]
+
+        vol_rates = pandas.DataFrame(
+            stoichiomatrix * rates_frame.values[:, np.newaxis],
+            index=self.chemistry.reactions_ids,
+            columns=self.chemistry.species_ids,
+        )
+        if annotate:
+            vol_rates.index = self.chemistry.reactions_strings
+
+        return vol_rates

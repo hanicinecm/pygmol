@@ -105,6 +105,34 @@ class ExampleChemistry(Chemistry):
         30,
         31,
     ]
+    reactions_strings = [
+        "e + O2 > O2 + e",
+        "e + Ar > e + Ar",
+        "e + Ar+ > Ar+ + e",
+        "e + Ar > Ar* + e",  # made up for testing purposes...
+        "e + Ar* > Ar** + e",
+        "e + Ar* > Ar + e",
+        "e + Ar** > Ar + e",
+        "e + Ar** > Ar* + e",
+        "Ar + e > Ar++ + e + e + e",  # made up for testing purposes...
+        "e + Ar* > Ar+ + e + e",
+        "e + Ar** > Ar+ + e + e",
+        "e + O > O-",  # made up for testing purposes...
+        "e + O2 > O- + O",
+        "e + e + O > O--",  # made up for testing purposes...
+        "e + O2 > e + O + O",
+        "e + O- > O--",  # made up for testing purposes...
+        "Ar+ + e > Ar++ + e + e",
+        "Ar* + Ar* > Ar+ + Ar + e",
+        "Ar* + Ar** > Ar+ + Ar + e",
+        "Ar + Ar+ > Ar + Ar+",
+        "O- + O > O2 + e",
+        "Ar+ + O- > Ar + O",
+        "Ar+ + O- + M > Ar + O + M",  # made up for testing purposes...
+        "Ar++ + O-- + M > Ar + O + M",  # made up for testing purposes...
+        "Ar** > Ar*",
+        "O-- > e + O-",  # made up for testing purposes...
+    ]
     reactions_arrh_a = [
         3.93e-14,
         2.660e-13,

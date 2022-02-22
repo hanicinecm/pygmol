@@ -90,6 +90,7 @@ def test_incorrect_return_matrix_shape():
 
 def test_defaults():
     chem = DefaultChemistryMinimal()
+    assert list(chem.reactions_strings) == ["Reaction 3", "Reaction 7", "Reaction 48"]
     assert list(chem.species_charges) == [0, 1]
     assert np.isclose(chem.species_masses, [39.95, 39.95], rtol=0.0001).all()
     assert list(chem.species_lj_sigma_coefficients) == [3, 3]
@@ -139,6 +140,7 @@ def test_chemistry_from_dict_defaults(chem_dict):
         "species_masses",
         "species_lj_sigma_coefficients",
         "species_surface_sticking_coefficients",
+        "reactions_strings",
     }
     chem_dict = {
         key: val for key, val in chem_dict.items() if key not in optional_attributes
@@ -148,6 +150,7 @@ def test_chemistry_from_dict_defaults(chem_dict):
     assert np.isclose(chem.species_masses, [39.95, 39.95], rtol=0.0001).all()
     assert list(chem.species_lj_sigma_coefficients) == [3, 3]
     assert list(chem.species_surface_sticking_coefficients) == [0, 1]
+    assert list(chem.reactions_strings) == ["Reaction 3", "Reaction 7", "Reaction 48"]
 
 
 def test_incompatible_defaults(chem_dict):

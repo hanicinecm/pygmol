@@ -77,13 +77,15 @@ def test_premature_solving():
     with pytest.raises(ModelSolutionError):
         model.get_solution_final()
     with pytest.raises(ModelSolutionError):
-        model.get_rates()
+        model.get_reaction_rates()
     with pytest.raises(ModelSolutionError):
-        model.get_rates_final()
+        model.get_reaction_rates_final()
     with pytest.raises(ModelSolutionError):
         model.get_wall_fluxes()
     with pytest.raises(ModelSolutionError):
         model.get_wall_fluxes_final()
+    with pytest.raises(ModelSolutionError):
+        model.get_volumetric_rates_matrix()
 
 
 def _get_mock_ode_result(success=True, dimension=3, t_samples=10):
@@ -139,9 +141,11 @@ def test_solve(monkeypatch):
 
 def test_build_solution(monkeypatch):
     mock_equations = MockEquations(DefaultChemistry(), DefaultParamsDyn())
-    mock_sol_labels = ["n_Ar", "n_Ar+", "n_e", "T_e", "T_n", "p"]
+    mock_sol_labels = ["n_Ar", "n_Ar+", "n_e", "T_e", "T_n", "p", "P"]
     mock_equations.final_solution_labels = mock_sol_labels
-    mock_equations.get_final_solution_values = lambda y: np.arange(len(mock_sol_labels))
+    mock_equations.get_final_solution_values = lambda t, y: np.arange(
+        len(mock_sol_labels)
+    )
     model = Model(mock_equations.chemistry, mock_equations.plasma_params)
     model.equations = mock_equations
     model.solution_raw = _get_mock_ode_result(success=True, dimension=3, t_samples=10)
@@ -203,10 +207,10 @@ def test_getters():
     assert list(wall_fluxes.columns) == ["t", "Ar", "Ar+"]  # species from DefaultChem.
     assert list(wall_fluxes.t) == list(model.t)
     assert list(model.get_wall_fluxes_final()) == list(wall_fluxes.iloc[-1])
-    reaction_rates = model.get_rates()
-    assert list(reaction_rates.columns) == ["t", "3", "7", "48"]  # reaction ids.
+    reaction_rates = model.get_reaction_rates()
+    assert list(reaction_rates.columns) == ["t", 3, 7, 48]  # reaction ids.
     assert list(reaction_rates["t"]) == list(model.t)
-    assert list(model.get_rates_final()) == list(reaction_rates.iloc[-1])
+    assert list(model.get_reaction_rates_final()) == list(reaction_rates.iloc[-1])
 
 
 def test_run_inconsistent_initial_densities():

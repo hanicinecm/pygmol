@@ -1373,16 +1373,18 @@ class ElectronEnergyEquations(Equations):
         Returns
         -------
         list of str
-            Labels of the final solution, e.g. `["Ar", "Ar+", "e", "T_e", "T_n", "p"]`
+            Labels of the final solution, e.g. `["Ar", "Ar+", "e", "T_e"]`
         """
-        return list(self.chemistry.species_ids) + ["e", "T_e", "T_n", "p"]
+        return list(self.chemistry.species_ids) + ["e", "T_e", "T_n", "p", "P"]
 
-    def get_final_solution_values(self, y: ndarray) -> ndarray:
+    def get_final_solution_values(self, t: float64, y: ndarray) -> ndarray:
         """Turns the raw state vector y into the final values consistent with
         the `final_solution_labels` above.
 
         Parameters
         ----------
+        t: float64
+            Time sample in [s].
         y : ndarray
             State vector *y*.
 
@@ -1396,7 +1398,8 @@ class ElectronEnergyEquations(Equations):
         temp_e = self.get_electron_temperature(y, n_e=n_e)
         temp_n = self.plasma_params.temp_n
         p = self.get_total_pressure(y)
-        return np.r_[n, n_e, temp_e, temp_n, p]
+        power = self.get_power_ext(t)
+        return np.r_[n, n_e, temp_e, temp_n, p, power]
 
     def get_y0_default(
         self,

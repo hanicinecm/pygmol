@@ -4,7 +4,7 @@ various objects expected by the ``pygmol`` framework.
 from abc import ABC, abstractmethod
 from typing import Union, Sequence, Dict, Callable, Mapping
 
-from numpy import ndarray
+from numpy import ndarray, float64
 from pyvalem.formula import FormulaParseError
 from pyvalem.stateful_species import StatefulSpecies
 from pyvalem.states import StateParseError
@@ -148,8 +148,17 @@ class Chemistry(ABC):
 
     @property
     @abstractmethod
-    def reactions_ids(self) -> Union[Sequence[str], Sequence[int]]:
+    def reactions_ids(self) -> Sequence[int]:
         """Unique IDs of all the reactions in the chemistry."""
+
+    @property
+    def reactions_strings(self) -> Sequence[str]:
+        """Optional human-readable reaction strings for all the reactions in the
+        chemistry.
+
+        This is used only for annotating the model solutions.
+        """
+        return [f"Reaction {r_id}" for r_id in self.reactions_ids]
 
     @property
     @abstractmethod
@@ -455,12 +464,28 @@ class Equations(ABC):
         """
 
     @abstractmethod
-    def get_final_solution_values(self, y: ndarray) -> ndarray:
-        """A method which turns the raw state vector `y` into the final solution
-        values consistent with the `final_solution_labels`.
+    def get_final_solution_values(self, t: float64, y: ndarray) -> ndarray:
+        """A method which turns the time [s] and the raw state vector `y` into the
+        final solution values consistent with the `final_solution_labels`.
 
-        The method must accept the ndarray `y` (of the dimension of the ODE system
-        being solved) and return ndarray of the same length as `final_solution_labels`.
+        The method must accept time `t` [sec] and the ndarray `y` (of the dimension of
+        the ODE system being solved) and return ndarray of the same length as
+        `final_solution_labels`.
+
+        Parameters
+        ----------
+        t : float64
+            Time (within the simulation) in [s].
+        y : ndarray
+            The instantaneous state vector `y` (dimension as is the dimension of the
+            IDE system being solved).
+
+        Returns
+        -------
+        ndarray
+            Array of the final solution values. These are the values of the *top-level*
+            solution (such as n_Ar, n_e, T_e, p, ...) constructed from the *lower-level*
+            solution, which is the state vector `y`.
         """
 
     @abstractmethod
@@ -479,4 +504,9 @@ class Equations(ABC):
             Mapping between the species ids and the initial densities (or their
             fractions). If not supplied, the densities in the state vector *y* should be
             initialized with some sensible default fractions.
+
+        Returns
+        -------
+        ndarray
+            A consistent initial guess for the state vector `y`.
         """

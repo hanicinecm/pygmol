@@ -16,6 +16,11 @@ class DefaultChemistry(Chemistry):
     # 7: e- + Ar -> Ar+ + e- + e-
     # 48: e- + Ar+ -> Ar+ + e-
     reactions_ids = [3, 7, 48]
+    reactions_strings = [
+        "e- + Ar -> Ar + e-",
+        "e- + Ar -> Ar+ + e- + e-",
+        "e- + Ar+ -> Ar+ + e-",
+    ]
     reactions_arrh_a = [2.66e-07, 3.09e-08, 1.61e-04]
     reactions_arrh_b = [-1.28e-02, 4.46e-01, -1.22e00]
     reactions_arrh_c = [3.15e00, 1.70e01, 3.82e-02]
