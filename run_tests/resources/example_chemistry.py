@@ -65,16 +65,19 @@ class ExampleChemistry(Chemistry):
         3.542,
         3.542,
     ]
-    species_surface_sticking_coefficients = 9 * [0.0]
+    # only ions and excited species get stuck to surfaces
+    species_surface_sticking_coefficients = [0, 1, 1, 0, 0, 1, 1, 1, 1]
+    # singly ionized and excited species return as neutrals
+    # doubly ionized and excited species return half as singly, half as neutrals
     species_surface_return_matrix = [
+        [0.0, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.5, 1.0, 0.5],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0],
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5],
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     ]
     reactions_ids = [
@@ -106,32 +109,32 @@ class ExampleChemistry(Chemistry):
         31,
     ]
     reactions_strings = [
-        "e + O2 > O2 + e",
-        "e + Ar > e + Ar",
-        "e + Ar+ > Ar+ + e",
-        "e + Ar > Ar* + e",  # made up for testing purposes...
-        "e + Ar* > Ar** + e",
-        "e + Ar* > Ar + e",
-        "e + Ar** > Ar + e",
-        "e + Ar** > Ar* + e",
-        "Ar + e > Ar++ + e + e + e",  # made up for testing purposes...
-        "e + Ar* > Ar+ + e + e",
-        "e + Ar** > Ar+ + e + e",
-        "e + O > O-",  # made up for testing purposes...
-        "e + O2 > O- + O",
-        "e + e + O > O--",  # made up for testing purposes...
-        "e + O2 > e + O + O",
-        "e + O- > O--",  # made up for testing purposes...
-        "Ar+ + e > Ar++ + e + e",
-        "Ar* + Ar* > Ar+ + Ar + e",
-        "Ar* + Ar** > Ar+ + Ar + e",
-        "Ar + Ar+ > Ar + Ar+",
-        "O- + O > O2 + e",
-        "Ar+ + O- > Ar + O",
-        "Ar+ + O- + M > Ar + O + M",  # made up for testing purposes...
-        "Ar++ + O-- + M > Ar + O + M",  # made up for testing purposes...
-        "Ar** > Ar*",
-        "O-- > e + O-",  # made up for testing purposes...
+        "e + O2 -> O2 + e",
+        "e + Ar -> e + Ar",
+        "e + Ar+ -> Ar+ + e",
+        "e + Ar -> Ar* + e",  # made up for testing purposes...
+        "e + Ar* -> Ar** + e",
+        "e + Ar* -> Ar + e",
+        "e + Ar** -> Ar + e",
+        "e + Ar** -> Ar* + e",
+        "Ar + e -> Ar++ + e + e + e",  # made up for testing purposes...
+        "e + Ar* -> Ar+ + e + e",
+        "e + Ar** -> Ar+ + e + e",
+        "e + O -> O-",  # made up for testing purposes...
+        "e + O2 -> O- + O",
+        "e + e + O -> O--",  # made up for testing purposes...
+        "e + O2 -> e + O + O",
+        "e + O- -> O--",  # made up for testing purposes...
+        "Ar+ + e -> Ar++ + e + e",
+        "Ar* + Ar* -> Ar+ + Ar + e",
+        "Ar* + Ar** -> Ar+ + Ar + e",
+        "Ar + Ar+ -> Ar + Ar+",
+        "O- + O -> O2 + e",
+        "Ar+ + O- -> Ar + O",
+        "Ar+ + O- + M -> Ar + O + M",  # made up for testing purposes...
+        "Ar++ + O-- + M -> Ar + O + M",  # made up for testing purposes...
+        "Ar** -> Ar*",
+        "O-- -> e + O-",  # made up for testing purposes...
     ]
     reactions_arrh_a = [
         3.93e-14,

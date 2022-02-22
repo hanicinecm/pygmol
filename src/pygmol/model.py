@@ -414,7 +414,7 @@ class Model:
         return self.get_surface_loss_rates().iloc[-1]
 
     def get_volumetric_rates_matrix(
-        self, t: float = None, annotate: bool = False
+        self, t: float = None, annotate: bool = True
     ) -> pandas.DataFrame:
         """Method returning a data frame of all the *volumetric rates of change* of
         each and every *heavy species* due to each and every reaction.
@@ -441,9 +441,10 @@ class Model:
             Time in [sec]. The closest existing time sample from the existing solution
             will be selected, but no interpolation will be performed.
             If not passed, the final time frame is selected.
-        annotate : bool, optional, defaults to False
+        annotate : bool, optional, defaults to True
             If True passed, the resulting dataframe will be indexed by the reaction
-            strings, rather than reaction ids.
+            strings, rather than reaction ids. The `Chemistry` instance must have the
+            `Chemistry.reactions_strings` attribute though.
 
         Returns
         -------
@@ -474,3 +475,47 @@ class Model:
             vol_rates.index = self.chemistry.reactions_strings
 
         return vol_rates
+
+    def get_surface_rates_matrix(
+        self, t: float = None, annotate: bool = True
+    ) -> pandas.DataFrame:
+        if self.solution_primary is None:
+            raise ModelSolutionError("The solver has not yet been run!")
+
+        return_matrix = np.array(self.chemistry.species_surface_return_matrix)
+
+        if t is None:
+            loss_rates_frame = self.get_surface_loss_rates_final()
+        else:
+            loss_rates = self.get_surface_loss_rates()
+            t_index = abs(loss_rates["t"] - t).idxmin()
+            loss_rates_frame = loss_rates.loc[t_index]
+        loss_rates_frame = loss_rates_frame.iloc[1:]  # remove the time.
+        # Loss rates matrix: loc[A, B] is loss rate (< 0) of A due to B sticking to
+        # surface. Ny definition, it is a diagonal matrix, A is lost only if A is stuck
+        # to surface
+        loss_rates_matrix = pandas.DataFrame(
+            np.diag(loss_rates_frame),
+            columns=self.chemistry.species_ids,
+            index=self.chemistry.species_ids,
+        )
+        # source rates matrix: loc[A, B] is a source rate (> 0) of A due to B sticking
+        # to surface and getting returned as A. This will typically not have any
+        # diagonal elements (those don't make sense, but are not prohibited).
+        source_rate_matrix = pandas.DataFrame(
+            return_matrix * -loss_rates_frame.values[np.newaxis, :],
+            columns=self.chemistry.species_ids,
+            index=self.chemistry.species_ids,
+        )
+        surface_rates_matrix = (loss_rates_matrix + source_rate_matrix).T
+        if annotate:
+            # get rid of the zero rows - rows of species which do not get stuck to surf.
+            surface_rates_matrix = surface_rates_matrix.loc[
+                (surface_rates_matrix != 0).any(axis=1)
+            ]
+            # swap the species ids as index with the actual surface reaction:
+            index = []
+            for sp_id in surface_rates_matrix.index:
+                raise NotImplementedError  # TODO: Implement this!
+
+        return surface_rates_matrix

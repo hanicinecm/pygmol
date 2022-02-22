@@ -87,6 +87,8 @@ def test_premature_solving():
         model.get_surface_loss_rates_final()
     with pytest.raises(ModelSolutionError):
         model.get_volumetric_rates_matrix()
+    with pytest.raises(ModelSolutionError):
+        model.get_surface_rates_matrix()
 
 
 def _get_mock_ode_result(success=True, dimension=3, t_samples=10):
