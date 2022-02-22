@@ -273,6 +273,11 @@ class Model:
         if self.solution_primary is None:
             raise ModelSolutionError("The solver has not yet been run!")
         equations_method = f"get_{quantity}"
+        if not hasattr(self.equations, equations_method):
+            raise ModelSolutionError(
+                f"The {type(self.equations).__name__} object does not have the "
+                f"'{equations_method}' method!"
+            )
         diagnostics = np.array(
             [
                 getattr(self.equations, equations_method)(y).copy()
@@ -283,7 +288,9 @@ class Model:
         # if it returns a scalar, diagnostics needs to be turned into a 2D array:
         if len(diagnostics.shape) < 2:
             diagnostics = diagnostics[np.newaxis].T
-        labels = [f"col{i}" for i in range(1, diagnostics.shape[1] + 1)]
+            labels = [quantity]
+        else:
+            labels = [f"col{i}" for i in range(1, diagnostics.shape[1] + 1)]
 
         df = pandas.DataFrame(np.c_[self.t, diagnostics], columns=["t"] + labels)
         if totals:

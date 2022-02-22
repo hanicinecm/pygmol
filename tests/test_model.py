@@ -70,6 +70,8 @@ def test_premature_solving():
         model._solve()
     with pytest.raises(ModelSolutionError):
         model._build_solution()
+    with pytest.raises(ModelSolutionError):
+        model.diagnose("foo")
 
 
 def _get_mock_ode_result(success=True, dimension=3, t_samples=10):
@@ -109,6 +111,9 @@ def test_solve(monkeypatch):
     )
     model._solve()
     assert model.solution_raw is not None
+    assert model.solution_raw.success
+    assert len(model.solution_raw.t) == 10
+    assert model.solution_raw.y.shape == (3, 10)
     assert model.solution_primary is None
     assert model.solution is None
     monkeypatch.setattr(
@@ -118,3 +123,45 @@ def test_solve(monkeypatch):
     )
     with pytest.raises(ModelSolutionError):
         model._solve()
+
+
+def test_build_solution(monkeypatch):
+    mock_equations = MockEquations(DefaultChemistry(), DefaultParamsDyn())
+    mock_sol_labels = ["n_Ar", "n_Ar+", "n_e", "T_e", "T_n", "p"]
+    mock_equations.final_solution_labels = mock_sol_labels
+    mock_equations.get_final_solution_values = lambda y: np.arange(len(mock_sol_labels))
+    model = Model(mock_equations.chemistry, mock_equations.plasma_params)
+    model.equations = mock_equations
+    model.solution_raw = _get_mock_ode_result(success=True, dimension=3, t_samples=10)
+    model._build_solution()
+    assert model.solution_primary.shape == (10, 3)
+    assert model.t.shape == (10,)
+    assert list(model.solution.columns) == ["t"] + mock_sol_labels
+    assert model.solution.shape == (10, 1 + len(mock_sol_labels))
+
+
+def test_success():
+    model = Model(DefaultChemistry(), DefaultParamsDyn())
+    model.solution_raw = _get_mock_ode_result(success=False)
+    assert not model.success()
+
+
+def test_diagnose():
+    mock_equations = MockEquations(DefaultChemistry(), DefaultParamsDyn())
+    mock_equations.get_foo_1d = lambda y: np.float64(0.42)
+    mock_equations.get_foo_3d = lambda y: np.array([0.0, 1.0, 2.0])
+    model = Model(mock_equations.chemistry, mock_equations.plasma_params)
+    model.equations = mock_equations
+    model.solution_primary = np.arange(25).reshape((5, 5))
+    model.t = np.arange(5)
+    with pytest.raises(ModelSolutionError):
+        model.diagnose("non_existing_getter")
+    diagnostics_1d = model.diagnose("foo_1d")
+    assert diagnostics_1d.shape == (5, 2)
+    assert list(diagnostics_1d.columns) == ["t", "foo_1d"]
+    assert list(diagnostics_1d["t"]) == list(model.t)
+    diagnostics_3d = model.diagnose("foo_3d")
+    assert diagnostics_3d.shape == (5, 4)
+    assert list(diagnostics_3d.columns) == ["t", "col1", "col2", "col3"]
+    assert list(diagnostics_3d["t"]) == list(model.t)
+    assert list(diagnostics_3d.iloc[-1]) == [4, 0, 1, 2]
