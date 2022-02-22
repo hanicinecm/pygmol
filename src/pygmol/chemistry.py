@@ -30,8 +30,8 @@ def chemistry_from_dict(chemistry_dict: dict) -> Chemistry:
         If the `chemistry_dict` does not adhere to the interface defined by the
         `Chemistry` ABC.
     """
-    concrete_class = type("ChemistryFromDict", (Chemistry,), chemistry_dict)
-    concrete_instance = concrete_class()
+    concrete_subclass = type("ChemistryFromDict", (Chemistry,), chemistry_dict)
+    concrete_instance = concrete_subclass()
     return concrete_instance
 
 

@@ -36,10 +36,10 @@ def plasma_parameters_from_dict(plasma_params_dict: dict) -> PlasmaParameters:
         If the `plasma_params_dict` does not adhere to the interface defined by
         `PlasmaParameters` ABC.
     """
-    concrete_class = type(
+    concrete_subclass = type(
         "PlasmaParametersFromDict", (PlasmaParameters,), plasma_params_dict
     )
-    concrete_instance = concrete_class()
+    concrete_instance = concrete_subclass()
     return concrete_instance
 
 

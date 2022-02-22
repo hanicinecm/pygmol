@@ -72,6 +72,18 @@ def test_premature_solving():
         model._build_solution()
     with pytest.raises(ModelSolutionError):
         model.diagnose("foo")
+    with pytest.raises(ModelSolutionError):
+        model.get_solution()
+    with pytest.raises(ModelSolutionError):
+        model.get_solution_final()
+    with pytest.raises(ModelSolutionError):
+        model.get_rates()
+    with pytest.raises(ModelSolutionError):
+        model.get_rates_final()
+    with pytest.raises(ModelSolutionError):
+        model.get_wall_fluxes()
+    with pytest.raises(ModelSolutionError):
+        model.get_wall_fluxes_final()
 
 
 def _get_mock_ode_result(success=True, dimension=3, t_samples=10):
@@ -138,6 +150,8 @@ def test_build_solution(monkeypatch):
     assert model.t.shape == (10,)
     assert list(model.solution.columns) == ["t"] + mock_sol_labels
     assert model.solution.shape == (10, 1 + len(mock_sol_labels))
+    assert (model.get_solution() == model.solution).all().all()
+    assert (model.get_solution_final() == model.solution.iloc[-1]).all()
 
 
 def test_success():
@@ -165,3 +179,31 @@ def test_diagnose():
     assert list(diagnostics_3d.columns) == ["t", "col1", "col2", "col3"]
     assert list(diagnostics_3d["t"]) == list(model.t)
     assert list(diagnostics_3d.iloc[-1]) == [4, 0, 1, 2]
+    diagnostics_3d_totals = model.diagnose("foo_3d", totals=True)
+    assert diagnostics_3d_totals.shape == (5, 5)
+    assert list(diagnostics_3d_totals.columns) == ["t", "col1", "col2", "col3", "total"]
+    assert list(diagnostics_3d_totals["t"]) == list(model.t)
+    assert list(diagnostics_3d_totals.iloc[-1]) == [4, 0, 1, 2, 3]
+
+
+def test_getters():
+    chem = DefaultChemistry()
+    params = DefaultParamsDyn()
+    model = Model(chem, params)
+    model.solution_primary = np.arange(25).reshape((5, 5))  # irrelevant number of cols
+    model.t = np.arange(5)
+
+    mock_equations = MockEquations(chem, params)
+    mock_equations.get_reaction_rates = lambda y: np.arange(len(chem.reactions_ids))
+    mock_equations.get_wall_fluxes = lambda y: np.arange(len(chem.species_ids))
+
+    model.equations = mock_equations
+
+    wall_fluxes = model.get_wall_fluxes()
+    assert list(wall_fluxes.columns) == ["t", "Ar", "Ar+"]  # species from DefaultChem.
+    assert list(wall_fluxes.t) == list(model.t)
+    assert list(model.get_wall_fluxes_final()) == list(wall_fluxes.iloc[-1])
+    reaction_rates = model.get_rates()
+    assert list(reaction_rates.columns) == ["t", "3", "7", "48"]  # reaction ids.
+    assert list(reaction_rates["t"]) == list(model.t)
+    assert list(model.get_rates_final()) == list(reaction_rates.iloc[-1])
