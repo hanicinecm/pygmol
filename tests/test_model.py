@@ -207,3 +207,29 @@ def test_getters():
     assert list(reaction_rates.columns) == ["t", "3", "7", "48"]  # reaction ids.
     assert list(reaction_rates["t"]) == list(model.t)
     assert list(model.get_rates_final()) == list(reaction_rates.iloc[-1])
+
+
+def test_run_inconsistent_initial_densities():
+    chem = DefaultChemistry()
+    params = DefaultParamsDyn()
+    model = Model(chem, params)
+    with pytest.raises(ModelSolutionError):
+        model.run(initial_densities={"O2": 1e20})  # O2 not in DefaultChemistry!
+    chem = DefaultChemistry(species_charges=[0, -1])  # turn Ar+ into M-
+    model = Model(chem, params)
+    with pytest.raises(ModelSolutionError):
+        model.run(initial_densities={"Ar": 1e20, "Ar+": 1})  # no space for electrons!
+
+
+def test_run(monkeypatch):
+    # a bit of an integration run, I'm only mocking out the actual solving
+    chem = DefaultChemistry()
+    params = DefaultParamsDyn()
+    model = Model(chem, params)
+    monkeypatch.setattr(model, "_solve", lambda y0: None)
+    model.solution_raw = _get_mock_ode_result(success=True)
+    model.run()
+    assert model.solution is not None
+    model.solution_raw = _get_mock_ode_result(success=False)
+    with pytest.raises(ModelSolutionError):
+        model.run()

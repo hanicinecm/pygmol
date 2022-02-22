@@ -68,3 +68,6 @@ def test_get_power_ext():
     assert eqs.get_power_ext(0) == 100
     assert eqs.get_power_ext(-1) == 100
     assert eqs.get_power_ext(1) == 100
+
+
+# TODO: ALL the methods of the concrete Equations subclass should be unit-tested!

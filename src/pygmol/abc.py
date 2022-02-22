@@ -5,10 +5,10 @@ from abc import ABC, abstractmethod
 from typing import Union, Sequence, Dict, Callable, Mapping
 
 from numpy import ndarray
-from scipy import constants
-from pyvalem.stateful_species import StatefulSpecies
 from pyvalem.formula import FormulaParseError
+from pyvalem.stateful_species import StatefulSpecies
 from pyvalem.states import StateParseError
+from scipy import constants
 
 
 class Chemistry(ABC):
