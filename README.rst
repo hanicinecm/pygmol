@@ -1,6 +1,8 @@
-|Tests action| |Unit-test coverage| |GitHub license| |PyPI version| |PyPI pyversions| |Code style|
+|Tests action| |Run tests action| |Unit-test coverage| |GitHub license| |PyPI version| |PyPI pyversions| |Code style|
 
-.. |Tests action| image:: https://github.com/hanicinecm/pygmol/workflows/tests/badge.svg
+.. |Tests action| image:: https://github.com/hanicinecm/pygmol/workflows/unit-tests/badge.svg
+   :target: https://github.com/hanicinecm/pygmol/actions
+.. |Run tests action| image:: https://github.com/hanicinecm/pygmol/workflows/run-tests/badge.svg
    :target: https://github.com/hanicinecm/pygmol/actions
 .. |Unit-test coverage| image:: https://codecov.io/gh/hanicinecm/pygmol/branch/master/graph/badge.svg?token=TNKBDTVGFV
    :target: https://codecov.io/gh/hanicinecm/pygmol
