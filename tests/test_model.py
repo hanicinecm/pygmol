@@ -105,7 +105,7 @@ def test_solve(monkeypatch):
     monkeypatch.setattr(
         pygmol.model,
         "solve_ivp",
-        _get_mock_solve_ivp(success=True, dimension=3, t_samples=10)
+        _get_mock_solve_ivp(success=True, dimension=3, t_samples=10),
     )
     model._solve()
     assert model.solution_raw is not None
@@ -114,7 +114,7 @@ def test_solve(monkeypatch):
     monkeypatch.setattr(
         pygmol.model,
         "solve_ivp",
-        _get_mock_solve_ivp(success=True, dimension=3, t_samples=10, raises=True)
+        _get_mock_solve_ivp(success=True, dimension=3, t_samples=10, raises=True),
     )
     with pytest.raises(ModelSolutionError):
         model._solve()
