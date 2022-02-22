@@ -12,4 +12,4 @@ def test_concrete_equations():
     with pytest.raises(NotImplementedError):
         concrete_equations.get_reaction_rates(y)
     with pytest.raises(NotImplementedError):
-        concrete_equations.get_wall_fluxes(y)
+        concrete_equations.get_surface_loss_rates(y)

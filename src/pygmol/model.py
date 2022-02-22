@@ -380,9 +380,9 @@ class Model:
         """
         return self.get_reaction_rates().iloc[-1]
 
-    def get_wall_fluxes(self) -> pandas.DataFrame:
-        """Method returning the wall fluxes in time for all the species in the
-        chemistry.
+    def get_surface_loss_rates(self) -> pandas.DataFrame:
+        """Method returning the surface loss rates [m-3/s] in time for all the heavy
+        species in the chemistry.
 
         The `run` method must have been called before this one.
 
@@ -393,12 +393,15 @@ class Model:
             of the species ids (see `Chemistry.species_ids`).
             Each row is for a single time sample.
         """
-        fluxes = self.diagnose("wall_fluxes")
-        fluxes.columns = ["t"] + [str(sp_id) for sp_id in self.chemistry.species_ids]
-        return fluxes
+        surf_loss_rates = self.diagnose("surface_loss_rates")
+        surf_loss_rates.columns = ["t"] + [
+            str(sp_id) for sp_id in self.chemistry.species_ids
+        ]
+        return surf_loss_rates
 
-    def get_wall_fluxes_final(self) -> pandas.Series:
-        """Method returning the final wall fluxes at the end of the model solution.
+    def get_surface_loss_rates_final(self) -> pandas.Series:
+        """Method returning the final surface loss rates [m-3/s] at the end of the model
+        solution.
 
         The `run` method must have been called before this one.
 
@@ -408,7 +411,7 @@ class Model:
             The first column is ``"t"`` for the time sample, the others are strings
             of the species ids (see `Chemistry.reactions_ids`).
         """
-        return self.get_wall_fluxes().iloc[-1]
+        return self.get_surface_loss_rates().iloc[-1]
 
     def get_volumetric_rates_matrix(
         self, t: float = None, annotate: bool = False

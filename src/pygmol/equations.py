@@ -793,7 +793,9 @@ class ElectronEnergyEquations(Equations):
         else:
             raise ValueError("Unsupported diffusion model!")
 
-    def get_diffusion_sinks(self, y: ndarray, wall_fluxes: ndarray = None) -> ndarray:
+    def get_surface_loss_rates(
+            self, y: ndarray, wall_fluxes: ndarray = None
+    ) -> ndarray:
         """Calculates the vector of contributions to time derivatives of densities due
         to the diffusion sinks to the walls. Only sinks, no sources.
 
@@ -811,10 +813,12 @@ class ElectronEnergyEquations(Equations):
         """
         if wall_fluxes is None:
             wall_fluxes = self.get_wall_fluxes(y)
-        source_diff_sinks = wall_fluxes * self.area / self.volume
-        return source_diff_sinks
+        surf_loss_rates = wall_fluxes * self.area / self.volume
+        return surf_loss_rates
 
-    def get_diffusion_sources(self, y: ndarray, diff_sinks: ndarray = None) -> ndarray:
+    def get_surface_source_rates(
+            self, y: ndarray, surf_loss_rates: ndarray = None
+    ) -> ndarray:
         """Calculate the vector of contributions to time derivatives of densities due to
         diffusion sources from the walls, caused by return-species re-injection from the
         walls to the plasma.
@@ -822,7 +826,7 @@ class ElectronEnergyEquations(Equations):
         Parameters
         ----------
         y : ndarray
-        diff_sinks : ndarray, optional
+        surf_loss_rates : ndarray, optional
             The vector of contributions to time derivatives of densities due to the
             diffusion losses for all the heavy species in [m-3/s].
 
@@ -832,12 +836,15 @@ class ElectronEnergyEquations(Equations):
             The vector of contributions to time derivatives of densities due to the
             wall-return sources for all the heavy species in [m-3/s].
         """
-        if diff_sinks is None:
-            diff_sinks = self.get_diffusion_sinks(y)
-        return np.sum(-diff_sinks[np.newaxis, :] * self.sp_return_matrix, axis=1)
+        if surf_loss_rates is None:
+            surf_loss_rates = self.get_surface_loss_rates(y)
+        return np.sum(-surf_loss_rates[np.newaxis, :] * self.sp_return_matrix, axis=1)
 
     def get_diffusion_source_rates(
-        self, y: ndarray, diff_sinks: ndarray = None, diff_sources: ndarray = None
+        self,
+        y: ndarray,
+        surf_loss_rates: ndarray = None,
+        surf_source_rates: ndarray = None
     ) -> ndarray:
         """Calculate the vector of contributions to time derivatives of densities due to
         diffusion sinks and wall-return sources.
@@ -845,10 +852,10 @@ class ElectronEnergyEquations(Equations):
         Parameters
         ----------
         y : ndarray
-        diff_sinks : ndarray, optional
+        surf_loss_rates : ndarray, optional
             The vector of contributions to time derivatives of densities due to the
             diffusion losses for all the heavy species in [m-3/s].
-        diff_sources : ndarray, optional
+        surf_source_rates : ndarray, optional
             The vector of contributions to time derivatives of densities due to the
             wall-return sources for all the heavy species in [m-3/s].
 
@@ -858,11 +865,13 @@ class ElectronEnergyEquations(Equations):
             The vector of contributions to time derivatives of densities due to the
             diffusion sinks and wall-return sources in [m-3/s].
         """
-        if diff_sinks is None:
-            diff_sinks = self.get_diffusion_sinks(y)
-        if diff_sources is None:
-            diff_sources = self.get_diffusion_sources(y, diff_sinks=diff_sinks)
-        return diff_sinks + diff_sources
+        if surf_loss_rates is None:
+            surf_loss_rates = self.get_surface_loss_rates(y)
+        if surf_source_rates is None:
+            surf_source_rates = self.get_surface_source_rates(
+                y, surf_loss_rates=surf_loss_rates
+            )
+        return surf_loss_rates + surf_source_rates
 
     def get_min_n_correction(self, y: ndarray, n: ndarray = None) -> ndarray:
         """This is an artificial (unphysical) correction applied to the RHS of the
@@ -1316,12 +1325,12 @@ class ElectronEnergyEquations(Equations):
                 y, diff_c_free=diff_c_free, diff_a_pos=diff_a_pos
             )
             wall_fluxes = self.get_wall_fluxes(y, n=n, diff_c=diff, v_m=v_m)
-            source_diff_sinks = self.get_diffusion_sinks(y, wall_fluxes=wall_fluxes)
-            source_diff_sources = self.get_diffusion_sources(
-                y, diff_sinks=source_diff_sinks
+            surf_loss_rates = self.get_surface_loss_rates(y, wall_fluxes=wall_fluxes)
+            surf_source_rates = self.get_surface_source_rates(
+                y, surf_loss_rates=surf_loss_rates
             )
             source_diff = self.get_diffusion_source_rates(
-                y, diff_sinks=source_diff_sinks, diff_sources=source_diff_sources
+                y, surf_loss_rates=surf_loss_rates, surf_source_rates=surf_source_rates
             )
             min_n_cor = self.get_min_n_correction(y, n=n)
             dn_over_dt = self.get_dn_over_dt(

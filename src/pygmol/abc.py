@@ -415,9 +415,13 @@ class Equations(ABC):
         """
         raise NotImplementedError
 
-    def get_wall_fluxes(self, y: ndarray) -> ndarray:
-        """Calculates the vector of wall-sticking fluxes for all the heavy species in
+    def get_surface_loss_rates(self, y: ndarray) -> ndarray:
+        """Calculates the vector of wall-loss rates [m-3/s] for all the heavy species in
         the chemistry (`self.chemistry`).
+
+        This *only* covers the species losses due to diffusion *and* sticking to
+        surfaces, but does not cover species conversion on the surfaces via the return
+        coefficients.
 
         Parameters
         ----------
@@ -427,7 +431,9 @@ class Equations(ABC):
         Returns
         -------
         ndarray
-            Wall fluxes (out-going) [m-3/s] for all the heavy species in the chemistry.
+            The vector of contributions to time derivatives of densities due to the
+            diffusion losses for all the heavy species in [m-3/s]. Does not include
+            the return species, only the *sticking losses*.
         """
         raise NotImplementedError
 

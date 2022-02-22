@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 from collections import namedtuple
 
@@ -81,9 +82,9 @@ def test_premature_solving():
     with pytest.raises(ModelSolutionError):
         model.get_reaction_rates_final()
     with pytest.raises(ModelSolutionError):
-        model.get_wall_fluxes()
+        model.get_surface_loss_rates()
     with pytest.raises(ModelSolutionError):
-        model.get_wall_fluxes_final()
+        model.get_surface_loss_rates_final()
     with pytest.raises(ModelSolutionError):
         model.get_volumetric_rates_matrix()
 
@@ -199,14 +200,14 @@ def test_getters():
 
     mock_equations = MockEquations(chem, params)
     mock_equations.get_reaction_rates = lambda y: np.arange(len(chem.reactions_ids))
-    mock_equations.get_wall_fluxes = lambda y: np.arange(len(chem.species_ids))
+    mock_equations.get_surface_loss_rates = lambda y: np.arange(len(chem.species_ids))
 
     model.equations = mock_equations
 
-    wall_fluxes = model.get_wall_fluxes()
-    assert list(wall_fluxes.columns) == ["t", "Ar", "Ar+"]  # species from DefaultChem.
-    assert list(wall_fluxes.t) == list(model.t)
-    assert list(model.get_wall_fluxes_final()) == list(wall_fluxes.iloc[-1])
+    surf_loss_rates = model.get_surface_loss_rates()
+    assert list(surf_loss_rates.columns) == ["t", "Ar", "Ar+"]  # from DefaultChemistry
+    assert list(surf_loss_rates.t) == list(model.t)
+    assert list(model.get_surface_loss_rates_final()) == list(surf_loss_rates.iloc[-1])
     reaction_rates = model.get_reaction_rates()
     assert list(reaction_rates.columns) == ["t", 3, 7, 48]  # reaction ids.
     assert list(reaction_rates["t"]) == list(model.t)
@@ -237,3 +238,40 @@ def test_run(monkeypatch):
     model.solution_raw = _get_mock_ode_result(success=False)
     with pytest.raises(ModelSolutionError):
         model.run()
+
+
+def test_get_volumetric_reaction_rates(monkeypatch):
+    chem = DefaultChemistry()
+    params = DefaultParamsDyn()
+    model = Model(chem, params)
+    mock_reaction_rates = pd.DataFrame(
+        np.arange(40).reshape((10, 4)), columns=["t", 3, 7, 48]
+    )
+    mock_reaction_rates["t"] = np.arange(10)
+    monkeypatch.setattr(model, "get_reaction_rates", lambda: mock_reaction_rates)
+    model.solution_primary = 42  # just to get past the check
+
+    vol_rates = model.get_volumetric_rates_matrix(t=None, annotate=False)
+    assert list(vol_rates.columns) == list(chem.species_ids)
+    assert list(vol_rates.index) == list(chem.reactions_ids)
+
+    vol_rates = model.get_volumetric_rates_matrix(t=None, annotate=True)
+    assert list(vol_rates.columns) == list(chem.species_ids)
+    assert list(vol_rates.index) == list(chem.reactions_strings)
+
+    vol_rates = model.get_volumetric_rates_matrix(t=None, annotate=False)
+    assert list(vol_rates.columns) == list(chem.species_ids)
+    assert list(vol_rates.index) == list(chem.reactions_ids)
+
+    vol_rates = model.get_volumetric_rates_matrix(t=None)
+    assert list(vol_rates.iloc[1]) == [-38, 38]
+    vol_rates = model.get_volumetric_rates_matrix(t=1000)
+    assert list(vol_rates.iloc[1]) == [-38, 38]
+    vol_rates = model.get_volumetric_rates_matrix(t=9)
+    assert list(vol_rates.iloc[1]) == [-38, 38]
+    vol_rates = model.get_volumetric_rates_matrix(t=8)
+    assert list(vol_rates.iloc[1]) == [-34, 34]
+    vol_rates = model.get_volumetric_rates_matrix(t=0)
+    assert list(vol_rates.iloc[1]) == [-2, 2]
+    vol_rates = model.get_volumetric_rates_matrix(t=-1000)
+    assert list(vol_rates.iloc[1]) == [-2, 2]
