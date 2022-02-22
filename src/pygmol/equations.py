@@ -794,7 +794,7 @@ class ElectronEnergyEquations(Equations):
             raise ValueError("Unsupported diffusion model!")
 
     def get_surface_loss_rates(
-            self, y: ndarray, wall_fluxes: ndarray = None
+        self, y: ndarray, wall_fluxes: ndarray = None
     ) -> ndarray:
         """Calculates the vector of contributions to time derivatives of densities due
         to the diffusion sinks to the walls. Only sinks, no sources.
@@ -817,7 +817,7 @@ class ElectronEnergyEquations(Equations):
         return surf_loss_rates
 
     def get_surface_source_rates(
-            self, y: ndarray, surf_loss_rates: ndarray = None
+        self, y: ndarray, surf_loss_rates: ndarray = None
     ) -> ndarray:
         """Calculate the vector of contributions to time derivatives of densities due to
         diffusion sources from the walls, caused by return-species re-injection from the
@@ -844,7 +844,7 @@ class ElectronEnergyEquations(Equations):
         self,
         y: ndarray,
         surf_loss_rates: ndarray = None,
-        surf_source_rates: ndarray = None
+        surf_source_rates: ndarray = None,
     ) -> ndarray:
         """Calculate the vector of contributions to time derivatives of densities due to
         diffusion sinks and wall-return sources.
