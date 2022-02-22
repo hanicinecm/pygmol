@@ -66,18 +66,18 @@ class ExampleChemistry(Chemistry):
         3.542,
     ]
     # only ions and excited species get stuck to surfaces
-    species_surface_sticking_coefficients = [0, 1, 1, 0, 0, 1, 1, 1, 1]
+    species_surface_sticking_coefficients = [0, 0, 0, 0, 0, 0, 0, 0, 0]
     # singly ionized and excited species return as neutrals
     # doubly ionized and excited species return half as singly, half as neutrals
     species_surface_return_matrix = [
-        [0.0, 1.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.5, 1.0, 0.5],
-        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0],
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     ]
     reactions_ids = [

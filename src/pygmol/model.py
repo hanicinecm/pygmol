@@ -413,7 +413,7 @@ class Model:
         """
         return self.get_surface_loss_rates().iloc[-1]
 
-    def get_volumetric_rates_matrix(
+    def get_rates_matrix_volume(
         self, t: float = None, annotate: bool = True
     ) -> pandas.DataFrame:
         """Method returning a data frame of all the *volumetric rates of change* of
@@ -427,12 +427,12 @@ class Model:
         `equations.get_reaction_rates` method returns results in the same units, as
         it should.)
 
-        The rows are indexed by reaction ids (see `Chemistry.reactions_ids` method of
+        The rows are indexed by reaction ids (see `Chemistry.reactions_ids` attribute of
         the chemistry abstract base class), or, if ``annotate=True`` flag passed, by the
-        reaction strings (see `Chemistry.reactions_strings` method of the chemistry
+        reaction strings (see `Chemistry.reactions_strings` attribute of the chemistry
         ABC.)
 
-        The columns are indexed by the species ids (see `Chemistry.species_ids` method
+        The columns are indexed by the species ids (see `Chemistry.species_ids` attrib.
         of the chemistry abstract base class).
 
         Parameters
@@ -472,17 +472,59 @@ class Model:
             columns=self.chemistry.species_ids,
         )
         if annotate:
-            vol_rates.index = self.chemistry.reactions_strings
+            vol_rates.index = [
+                f"{r_str} (R{r_id})"
+                for r_id, r_str in zip(
+                    self.chemistry.reactions_ids, self.chemistry.reactions_strings
+                )
+            ]
 
         return vol_rates
 
-    def get_surface_rates_matrix(
+    def get_rates_matrix_surface(
         self, t: float = None, annotate: bool = True
     ) -> pandas.DataFrame:
+        """Method returning a data frame of all the *surface rates of change* of
+        each and every *heavy species* due species sticking to surfaces and returning
+        as different species (return species).
+
+        Each row correspond to a single surface reaction and each column correspond to a
+        single heavy species in the chemistry set. The values are rates of change
+        (positive for surface sources / production or negative for surface sinks /
+        consumption) of the densities of all the species. All the values are in [m-3/s]
+        (assuming the `equations.get_surface_loss_rates` method returns results in the
+        same units, as it should.)
+
+        The rows are indexed by species ids (species "hitting the surface"), see
+        `Chemistry.species_ids`, or, if ``annotate=True`` flag passed, by dynamically
+        constructed reaction strings, such as "Ar+ + surf. -> surf.",
+        "Ar+ + surf. -> surf. + Ar", or "10Ar+2 + surf. -> 9Ar + Ar+".
+
+        The columns are indexed by the species ids (see `Chemistry.species_ids` attribute
+        of the chemistry abstract base class).
+
+        Parameters
+        ----------
+        t : float, optional
+            Time in [sec]. The closest existing time sample from the existing solution
+            will be selected, but no interpolation will be performed.
+            If not passed, the final time frame is selected.
+        annotate : bool, optional, defaults to True
+            If True passed, the resulting dataframe will be indexed by the reaction
+            strings, rather than species ids.
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
         if self.solution_primary is None:
             raise ModelSolutionError("The solver has not yet been run!")
 
-        return_matrix = np.array(self.chemistry.species_surface_return_matrix)
+        return_matrix = pandas.DataFrame(
+            self.chemistry.species_surface_return_matrix,
+            columns=self.chemistry.species_ids,
+            index=self.chemistry.species_ids,
+        )
 
         if t is None:
             loss_rates_frame = self.get_surface_loss_rates_final()
@@ -496,17 +538,15 @@ class Model:
         # to surface
         loss_rates_matrix = pandas.DataFrame(
             np.diag(loss_rates_frame),
-            columns=self.chemistry.species_ids,
-            index=self.chemistry.species_ids,
+            columns=loss_rates_frame.index,
+            index=loss_rates_frame.index,
         )
         # source rates matrix: loc[A, B] is a source rate (> 0) of A due to B sticking
         # to surface and getting returned as A. This will typically not have any
         # diagonal elements (those don't make sense, but are not prohibited).
-        source_rate_matrix = pandas.DataFrame(
-            return_matrix * -loss_rates_frame.values[np.newaxis, :],
-            columns=self.chemistry.species_ids,
-            index=self.chemistry.species_ids,
-        )
+        source_rate_matrix = return_matrix.multiply(-loss_rates_frame, axis="columns")
+        # combine losses and sources (and transpose, as the return matrix is other way
+        # around):
         surface_rates_matrix = (loss_rates_matrix + source_rate_matrix).T
         if annotate:
             # get rid of the zero rows - rows of species which do not get stuck to surf.
@@ -514,8 +554,57 @@ class Model:
                 (surface_rates_matrix != 0).any(axis=1)
             ]
             # swap the species ids as index with the actual surface reaction:
-            index = []
+            new_index = []
             for sp_id in surface_rates_matrix.index:
-                raise NotImplementedError  # TODO: Implement this!
+                return_coefs = return_matrix[sp_id]
+                return_species = list(return_coefs[return_coefs != 0].index)
+                stoich_coefs = return_coefs[return_coefs != 0].values
+                r_str = f"{sp_id} + surf. -> surf."
+                rhs = " + ".join(
+                    f"{stoich if stoich != 1 else ''}{sp}"
+                    for stoich, sp in zip(stoich_coefs, return_species)
+                )
+                if rhs:
+                    r_str = f"{r_str} + {rhs}"
+                new_index.append(r_str)
+            surface_rates_matrix.index = new_index
 
         return surface_rates_matrix
+
+    def get_rates_matrix_total(self, t: float = None) -> pandas.DataFrame:
+        """Method returning the rates of change of all the heavy species densities
+        for all the volumetric and surface reactions.
+
+        The rates are in [m-3/s] and in the form of `pandas.DataFrame`, with columns
+        labeled by the species in the chemistry (see `Chemistry.species_ids` attribute
+        of the chemistry ABC), and indexed by human-readable reaction strings.
+        The values are all extracted from the global model solution time sample closest
+        to the passed time `t`.
+
+        See also `get_rates_matrix_volume` and `get_rates_matrix_surface`, as the
+        total rates matrix is constructed from the two with annotated indices.
+        The rows (reactions) in the data frame are sorted from the most significant one
+        (the one with the largest sum of absolute-valued rates of change across all the
+        heavy species).
+
+        Parameters
+        ----------
+        t : float, optional
+            Time in [sec]. The closest existing time sample from the existing solution
+            will be selected, but no interpolation will be performed.
+            If not passed, the final time frame is selected.
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
+        total_rates = pandas.concat(
+            [
+                self.get_rates_matrix_volume(t, annotate=True),
+                self.get_rates_matrix_surface(t, annotate=True),
+            ]
+        )
+        total_rates["sort_by"] = abs(total_rates).sum(axis="columns")
+        total_rates = total_rates.sort_values(by="sort_by", ascending=False)
+        total_rates.drop(columns=["sort_by"], inplace=True)
+        return total_rates

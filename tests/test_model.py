@@ -86,9 +86,11 @@ def test_premature_solving():
     with pytest.raises(ModelSolutionError):
         model.get_surface_loss_rates_final()
     with pytest.raises(ModelSolutionError):
-        model.get_volumetric_rates_matrix()
+        model.get_rates_matrix_surface()
     with pytest.raises(ModelSolutionError):
-        model.get_surface_rates_matrix()
+        model.get_rates_matrix_volume()
+    with pytest.raises(ModelSolutionError):
+        model.get_rates_matrix_total()
 
 
 def _get_mock_ode_result(success=True, dimension=3, t_samples=10):
@@ -242,7 +244,7 @@ def test_run(monkeypatch):
         model.run()
 
 
-def test_get_volumetric_reaction_rates(monkeypatch):
+def test_get_rates_matrix_volume(monkeypatch):
     chem = DefaultChemistry()
     params = DefaultParamsDyn()
     model = Model(chem, params)
@@ -253,27 +255,27 @@ def test_get_volumetric_reaction_rates(monkeypatch):
     monkeypatch.setattr(model, "get_reaction_rates", lambda: mock_reaction_rates)
     model.solution_primary = 42  # just to get past the check
 
-    vol_rates = model.get_volumetric_rates_matrix(t=None, annotate=False)
+    vol_rates = model.get_rates_matrix_volume(t=None, annotate=False)
     assert list(vol_rates.columns) == list(chem.species_ids)
     assert list(vol_rates.index) == list(chem.reactions_ids)
 
-    vol_rates = model.get_volumetric_rates_matrix(t=None, annotate=True)
+    vol_rates = model.get_rates_matrix_volume(t=None, annotate=True)
     assert list(vol_rates.columns) == list(chem.species_ids)
-    assert list(vol_rates.index) == list(chem.reactions_strings)
+    assert vol_rates.index[0] == "e- + Ar -> Ar + e- (R3)"
 
-    vol_rates = model.get_volumetric_rates_matrix(t=None, annotate=False)
+    vol_rates = model.get_rates_matrix_volume(t=None, annotate=False)
     assert list(vol_rates.columns) == list(chem.species_ids)
     assert list(vol_rates.index) == list(chem.reactions_ids)
 
-    vol_rates = model.get_volumetric_rates_matrix(t=None)
+    vol_rates = model.get_rates_matrix_volume(t=None)
     assert list(vol_rates.iloc[1]) == [-38, 38]
-    vol_rates = model.get_volumetric_rates_matrix(t=1000)
+    vol_rates = model.get_rates_matrix_volume(t=1000)
     assert list(vol_rates.iloc[1]) == [-38, 38]
-    vol_rates = model.get_volumetric_rates_matrix(t=9)
+    vol_rates = model.get_rates_matrix_volume(t=9)
     assert list(vol_rates.iloc[1]) == [-38, 38]
-    vol_rates = model.get_volumetric_rates_matrix(t=8)
+    vol_rates = model.get_rates_matrix_volume(t=8)
     assert list(vol_rates.iloc[1]) == [-34, 34]
-    vol_rates = model.get_volumetric_rates_matrix(t=0)
+    vol_rates = model.get_rates_matrix_volume(t=0)
     assert list(vol_rates.iloc[1]) == [-2, 2]
-    vol_rates = model.get_volumetric_rates_matrix(t=-1000)
+    vol_rates = model.get_rates_matrix_volume(t=-1000)
     assert list(vol_rates.iloc[1]) == [-2, 2]
