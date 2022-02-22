@@ -1,27 +1,15 @@
 import pytest
 
-from pygmol.abc import Equations
+import numpy as np
+
+from .resources import MockEquations, DefaultChemistry, DefaultParamsStat
 
 
-# noinspection PyAbstractClass,PyTypeChecker
 def test_concrete_equations():
-    # noinspection PyMethodOverriding
-    class ConcreteEquations(Equations):
 
-        ode_system_rhs = None
-        final_solution_labels = None
-
-        def __init__(self, chemistry, plasma_params):
-            super().__init__(chemistry, plasma_params)
-
-        def get_final_solution_values(self, y):
-            pass
-
-        def get_y0_default(self, initial_densities):
-            pass
-
-    concrete_equations = ConcreteEquations(None, None)
+    concrete_equations = MockEquations(DefaultChemistry(), DefaultParamsStat())
+    y = np.array([])
     with pytest.raises(NotImplementedError):
-        concrete_equations.get_reaction_rates(None)
+        concrete_equations.get_reaction_rates(y)
     with pytest.raises(NotImplementedError):
-        concrete_equations.get_wall_fluxes(None)
+        concrete_equations.get_wall_fluxes(y)

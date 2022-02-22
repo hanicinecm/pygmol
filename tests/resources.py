@@ -1,4 +1,4 @@
-from pygmol.abc import Chemistry, PlasmaParameters
+from pygmol.abc import Chemistry, PlasmaParameters, Equations
 
 
 class DefaultChemistry(Chemistry):
@@ -122,3 +122,18 @@ class DefaultParamsMinimal(PlasmaParameters):
     """
 
     radius, length, pressure, power = 1.0, 2.0, 2.0, 400.0
+
+
+# noinspection PyAbstractClass
+class MockEquations(Equations):
+    ode_system_rhs = None
+    final_solution_labels = None
+
+    def __init__(self, chemistry, plasma_params):
+        super().__init__(chemistry, plasma_params)
+
+    def get_final_solution_values(self, y):
+        pass
+
+    def get_y0_default(self, initial_densities=None):
+        pass
