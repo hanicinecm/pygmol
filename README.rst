@@ -20,8 +20,7 @@
 Introduction to PyGMol
 **********************
 
-**PyGMol** (the Python Global Model) is a simple-to-use 0D model, or
-global model, for modeling plasma chemistry.
+**PyGMol** (the Python Global Model) is a simple-to-use 0D model of plasma chemistry.
 
 At its current form, the ``pygmol`` package defines the
 system of ordinary differential equations (ODE) which govern the plasma chemistry, and
