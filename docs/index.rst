@@ -26,6 +26,7 @@ The ``Model``:
 To be added...
 
 .. code-block:: pycon
+
     >>> import sys
     >>> from pathlib import Path
     >>> sys.path.append(str(Path(".") / "docs"))
@@ -135,5 +136,6 @@ To be added...
        1.5e-02       3.9e-05
        1.5e-02       3.9e-05
     ...
+
 
 .. _equations: https://github.com/hanicinecm/pygmol/blob/master/docs/equations.pdf
