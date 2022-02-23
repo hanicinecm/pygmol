@@ -147,7 +147,7 @@ class ElectronEnergyEquations(Equations):
         self.mask_sp_negative = np.array(chemistry.species_charges) < 0
         self.mask_sp_neutral = np.array(chemistry.species_charges) == 0
         self.mask_r_electron = np.array(chemistry.reactions_electron_stoich_lhs) > 0
-        self.mask_r_elastic = np.array(chemistry.reactions_elastic_flags)
+        self.mask_r_elastic = np.array(chemistry.reactions_elastic_flags, dtype=bool)
 
         # STATIC PARAMETERS (not changing with the solver iterations)
         self.num_species = len(chemistry.species_ids)
