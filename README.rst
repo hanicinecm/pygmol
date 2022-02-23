@@ -1,10 +1,10 @@
 |Tests action| |Run tests action| |Doc tests action| |Unit-test coverage| |GitHub license| |PyPI version| |PyPI pyversions| |Code style|
 
-.. |Tests action| image:: https://github.com/hanicinecm/pygmol/workflows/unit-tests/badge.svg
+.. |Tests action| image:: https://github.com/hanicinecm/pygmol/workflows/unit-tests.yml/badge.svg
    :target: https://github.com/hanicinecm/pygmol/actions
-.. |Run tests action| image:: https://github.com/hanicinecm/pygmol/workflows/run-tests/badge.svg
+.. |Run tests action| image:: https://github.com/hanicinecm/pygmol/workflows/run-tests.yml/badge.svg
    :target: https://github.com/hanicinecm/pygmol/actions
-.. |Doc tests action| image:: https://github.com/hanicinecm/pygmol/workflows/doc-tests/badge.svg
+.. |Doc tests action| image:: https://github.com/github/docs/actions/workflows/doc-tests.yml/badge.svg
    :target: https://github.com/hanicinecm/pygmol/actions
 .. |Unit-test coverage| image:: https://codecov.io/gh/hanicinecm/pygmol/branch/master/graph/badge.svg?token=TNKBDTVGFV
    :target: https://codecov.io/gh/hanicinecm/pygmol
