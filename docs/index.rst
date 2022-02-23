@@ -29,16 +29,21 @@ To be added...
 
     >>> import sys
     >>> from pathlib import Path
-    >>> sys.path.append(str(Path(".") / "docs"))
     >>> import pandas as pd
-    >>> pd.options.display.float_format = "{:.1e}".format
-    >>> pd.set_option("display.max_rows", 10)
-    >>> pd.set_option("display.max_columns", 10)
-    >>> pd.set_option("display.expand_frame_repr", False)
-    >>> def print_table(df: pd.DataFrame):
-    ...     df = df.copy()
-    ...     df.index = [""] * len(df)
-    ...     print(df)
+    >>> sys.path.append(str(Path(".") / "docs"))
+
+    >>> def print_table(df: pd.DataFrame, max_cols: int = 10, hide_index: bool = True):
+    ...     if hide_index:
+    ...         df = df.copy()
+    ...         df.index = [""] * len(df)
+    ...     with pd.option_context(
+    ...         "display.float_format", "{:.1e}".format,
+    ...         "display.max_rows", 10,
+    ...         "display.max_columns", max_cols,
+    ...         "display.expand_frame_repr", False
+    ...     ):
+    ...         print(df)
+
 
     >>> from pygmol.model import Model
 
@@ -54,7 +59,6 @@ To be added...
 
     >>> solution = model.get_solution()
     >>> print_table(solution)
-    ...
              t      He     He*     He+    He2*  ...       e     T_e     T_n       p       P
        0.0e+00 2.4e+25 2.4e+10 2.0e+10 2.4e+10  ... 2.4e+10 1.0e+00 3.0e+02 1.0e+05 3.0e-01
        2.9e-15 2.4e+25 2.4e+10 2.0e+10 2.4e+10  ... 2.4e+10 6.0e+00 3.0e+02 1.0e+05 3.0e-01
@@ -71,7 +75,6 @@ To be added...
 
     >>> reaction_rates = model.get_reaction_rates()
     >>> print_table(reaction_rates)
-    ...
              t       1       2       3       4  ...     369     370     371     372     373
        0.0e+00 1.9e-08 1.8e-07 2.8e+07 2.8e+07  ... 2.1e+06 1.5e+07 7.5e+05 6.2e+07 6.7e+07
        2.9e-15 6.1e-12 1.4e-10 3.2e+05 3.2e+05  ... 2.1e+06 1.5e+07 7.5e+05 6.2e+07 6.7e+07
@@ -87,25 +90,24 @@ To be added...
     ...
 
     >>> rates_matrix = model.get_rates_matrix_total()
-    >>> rates_matrix
+    >>> print_table(rates_matrix, max_cols=6, hide_index=False)
+                                              He     He*     He+  ...     O3-     O4+     O4-
+    He + O2(v) -> He + O2 (R272)         0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
+    O(1D) + O2 -> O + O2(b1Su+) (R112)   0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
+    O2(b1Su+) + O3 -> O + O2 + O2 (R137) 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
+    e + O2 -> e + O + O(1D) (R22)        0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
+    e + O2 -> e + O2(a1Du) (R32)         0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
     ...
-                                              He     He*     He+    He2*    He2+  ...   O3(v)     O3+     O3-     O4+     O4-
-    He + O2(v) -> He + O2 (R272)         0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00
-    O(1D) + O2 -> O + O2(b1Su+) (R112)   0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00
-    O2(b1Su+) + O3 -> O + O2 + O2 (R137) 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00
-    e + O2 -> e + O + O(1D) (R22)        0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00
-    e + O2 -> e + O2(a1Du) (R32)         0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00
-    ...                                      ...     ...     ...     ...     ...  ...     ...     ...     ...     ...     ...
-    e + He -> e + He (R5)                0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00
-    e + O2(b1Su+) -> e + O2(b1Su+) (R61) 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00
-    e + O2(b1Su+) -> e + O2(b1Su+) (R62) 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00
-    e + O2(b1Su+) -> e + O2(b1Su+) (R69) 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00
-    e + O2(a1Du) -> e + O2(a1Du) (R43)   0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00 0.0e+00 0.0e+00
+    e + He -> e + He (R5)                0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
+    e + O2(b1Su+) -> e + O2(b1Su+) (R61) 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
+    e + O2(b1Su+) -> e + O2(b1Su+) (R62) 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
+    e + O2(b1Su+) -> e + O2(b1Su+) (R69) 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
+    e + O2(a1Du) -> e + O2(a1Du) (R43)   0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
     ...
 
-    >>> selected_rates_matrix = rates_matrix[["O", "O2(a1Du)", "O3"]]
-    >>> selected_rates_matrix.loc[(selected_rates_matrix!=0).any(axis=1)]
-    ...
+    >>> selected = rates_matrix[["O", "O2(a1Du)", "O3"]]
+    >>> selected = selected.loc[(selected!=0).any(axis=1)]
+    >>> print_table(selected, hide_index=False)
                                                O  O2(a1Du)       O3
     O(1D) + O2 -> O + O2(b1Su+) (R112)   3.8e+23   0.0e+00  0.0e+00
     O2(b1Su+) + O3 -> O + O2 + O2 (R137) 2.4e+23   0.0e+00 -2.4e+23
@@ -122,7 +124,6 @@ To be added...
 
     >>> debye_length = model.diagnose("debye_length")
     >>> print_table(debye_length)
-    ...
              t  debye_length
        0.0e+00       4.8e-02
        2.9e-15       1.2e-01
