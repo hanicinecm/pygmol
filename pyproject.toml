@@ -10,3 +10,6 @@ source = ["src"]
 
 [tool.coverage.html]
 directory = "htmlcov"
+
+[tool.black]
+extend-exclude = "docs/"
