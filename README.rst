@@ -20,7 +20,7 @@
 Introduction to PyGMol
 **********************
 
-**PyGMol** (the **Py**thon **G**lobal **Mo**de**l**) is a simple-tu-use 0D model, or
+**PyGMol** (the Python Global Model) is a simple-tu-use 0D model, or
 global model, for modeling plasma chemistry.
 
 At its current form, the ``pygmol`` package defines the equations belonging to the
@@ -32,7 +32,7 @@ temperature (while heavy-species temperature is treated as a parameter to the mo
 
 The equations being solved for by the model are documented in their full form in the
 equations_ document. The package inner workings, structure and some useful examples
-are discussed in the ``pygmol`` documentation_. For further info, refer to the codebase
+are discussed in the documentation_. For further info, refer to the codebase
 docstrings.
 
 
@@ -85,7 +85,7 @@ Docstrings in the project adhere to the numpydoc_ styling.
 The project code is formatted by ``black``.
 
 
-.. _equations: https://raw.githubusercontent.com/hanicinecm/pygmol/master/docs/equations.pdf
+.. _equations: https://github.com/hanicinecm/pygmol/blob/master/docs/equations.pdf
 .. _documentation: https://github.com/hanicinecm/pygmol/tree/master/docs/index.rst
 .. _GitHub: https://github.com/hanicinecm/pygmol
 .. _PyPI: https://pypi.org/project/pygmol/
