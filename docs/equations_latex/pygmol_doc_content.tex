@@ -1,0 +1,462 @@
+
+\section{Symbols}\label{sec:symbols}
+\setstretch{1.0}
+\begin{longtable}[H]{L{16mm}R{25mm}L{94mm}}
+    \caption{Overview of symbols used in the description of the PyGMol global modelling framework.} \\
+    \label{tab:03-symbols} \\
+    \noalign{\vskip -5mm}
+    \hline
+    \hline
+    \noalign{\vskip 1mm}
+    \textbf{Symbol} & \textbf{Unit} & \textbf{Description} \\
+    \hline
+    \noalign{\vskip 1mm}
+    $i, k$ & & Index, running over species in a kinetic scheme \\
+    $i_{0}, i_{+}, i_{-}$ & & Indices $i$ running over neutral, positive and negative species respectively \\
+    $j$ & & Index, running over reactions in a kinetic scheme \\
+    $N_{\mathrm{S}}$ & & number of species in a kinetic scheme \\
+    $n_{i}$ & [m$^{-3}$] & Number density of the $i$-th species in a kinetic scheme \\
+    $n_{\mathrm{e}}$ & [m$^{-3}$] & Electron number density \\
+    $\varrho_{\mathrm{e}}$ & [eV$\cdot$m$^{-3}$] & Electron energy density \\
+    $P$ & [W] & Absorbed power \\
+    $p_{0}$ & [Pa] & Desired pressure \\
+    $p$ & [Pa] & Instantaneous pressure \\
+    $Q_{i}$ & [sccm] & Feed flow for $i$-th species in a kinetic scheme \\
+    $R_{\mathrm{p}}, Z_{\mathrm{p}}$ & [m] & Plasma dimensions: radius and length \\
+    $V$ & [m$^{3}$] & Plasma volume \\
+    $\mathrm{T}_{\mathrm{g}}$ & [K] & Neutral temperature \\
+    $\mathrm{T}_{\mathrm{i}}$ & [K] & Positive ion temperature \\
+    $\mathrm{T}_{\mathrm{e}}$ & [K] & Electron temperature \\
+    $T_{\mathrm{g}}$ & [eV] & Neutral temperature \\
+    $T_{\mathrm{i}}$ & [eV] & Positive ion temperature \\
+    $T_{\mathrm{e}}$ & [eV] & Electron temperature \\
+    $k_{j}$ & [m$^{-3 + 3m}$s$^{-1}$] & Reaction rate coefficient of the $j$-th reaction of an order $m$ in a kinetic
+                                        scheme \\
+    $R_{j}$ & [m$^{-3}$s$^{-1}$] & Reaction rate of the $j$-th reaction in a kinetic scheme \\
+    $M_{\mathrm{cp}, j}$ & [kg] & Mass of the collision partner in $j$-th electron reaction \\
+    $M_{i}$ & [kg] & Mass of the $i$-th species \\
+    $m_{\mathrm{e}}$ & [kg] & Electron mass \\
+    $q_{i}$ & [e] & Charge of the $i$-th species \\
+    $\mathrm{e}$ & [C] & Electron charge \\
+    $\sigma^{\mathrm{LJ}}_{i}$ & [m] & $\sigma$ parameter of the Lennard-Jones potential for $i$-th species \\
+    $\Delta E_{\mathrm{e}, j}^{\mathrm{inel}}$ & [eV] & Electron energy loss due to an inelastic collision $j$ \\
+    $a_{ij}^{\mathrm{L}}$ & & stoichiometric coefficient of $i$-th distinct species on left hand side in
+                              $j$-th reaction \\
+    $a_{ij}^{\mathrm{R}}$ & & stoichiometric coefficient of $i$-th distinct species on right hand side in
+                              $j$-th reaction \\
+    $a_{ij}$ & & Net stoichiometric coefficient of $i$-th distinct species in $j$-th reaction \\
+    $A_{j}$ & [m$^{-3 + 3m}$s$^{-1}$] & Arrhenius parameter -- pre-exponential factor \\
+    $n_{j}$ & & Arrhenius parameter -- exponent \\
+    $E_{\mathrm{a}, j}$ & [eV] & Arrhenius parameter -- activation energy \\
+    $\mathrm{E}_{\mathrm{a}, j}$ & [K] & Arrhenius parameter -- activation energy \\
+    $k_{\mathrm{B}}$ & [JK$^{-1}$] & Boltzmann constant \\
+    $s_{i}$ & & Sticking coefficient -- probability of $i$-th species sticking to a plasma boundary ($s_{i} \in
+                [0, 1]$ ) \\
+    $r_{ik}$ & & Return coefficient -- number of $i$-th species returned for each \emph{one} of \emph{stuck} $k$-th
+                 species ($r_{ik} \in \mathbf{R}^{+}_{0}$) \\
+    $D_{i}$ & [m$^{2}\mathrm{s}^{-1}$] & Diffusion coefficient of $i$-th species \\
+    $D_{\mathrm{a}}$ & [m$^{2}\mathrm{s}^{-1}$] & Ambipolar diffusion coefficient \\
+    $\Lambda$ & [m] & Characteristic diffusion length \\
+    $\lambda_{i}$ & [m] & Mean free path of $i$-th species \\
+    $\overline{v}_{i}$ & [ms$^{-1}$] & Mean speed of $i$-th species \\
+    $\sigma^{\mathrm{m}}_{ik}$ & [m$^{2}$] & Momentum transfer cross section for $i$-th species scattering on
+                                             $k$-th species \\
+    $\overline{V_{\mathrm{s}}}$ & [V] & Mean sheath voltage \\
+    $n_{\min}$ & [m$^{-3}$] & Minimal allowed particle density \\
+    $\varrho_{\mathrm{e}, \min}$ & [eV$\cdot$m$^{-3}$] & Minimal allowed electron energy density \\
+    \hline
+    \hline
+\end{longtable}
+\setstretch{1.5}
+
+\section{Model Description}
+The model solves the set of following ordinary differential equations (ODE):
+\begin{itemize}
+    \item[--]
+    \textbf{Particle density balance equation for heavy species}, including contributions from volumetric reactions,
+    flow and from diffusion sinks and surface sources of $ n_{i} $.
+    \item[--]
+    \textbf{Electron energy density balance equation}, including contributions of power absorbed by the plasma,
+    elastic and inelastic collisions between electrons and heavy species, generation and loss of electrons in
+    volumetric reactions and power lost to walls by electrons and ions.
+\end{itemize}
+
+The electron density $n_{\mathrm{e}}$ is not solved for explicitly but rather implicitly by enforcing the charge
+neutrality.
+Also, the heavy species temperature is not resolved in the model, but rather treated as a constant input parameter.
+The collisional kinetics is not described by cross sections, but rather parametrized for each reaction with the
+Arrhenius formula~\eqref{eq:03-arrh-1},~\eqref{eq:03-arrh-2}.
+The model was developed mainly for the purpose of plasma chemistry reduction, which justifies it's simplicity and the
+degree of approximation.
+For those reasons, the model should only be used with a great care to obtain any sort of quantitative results.
+
+\subsection{Input parameters for the model:}
+\begin{itemize}
+    \item[--] Plasma parameters:
+    $P$, $p_{0}$, $Q_{i}$, $R_{\mathrm{p}}$, $Z_{\mathrm{p}}$, $\mathrm{T}_{\mathrm{g}}$
+    \item[--] Reaction set parameters:
+    $M_{i}$, $q_{i}$, $\sigma^{\mathrm{LJ}}_{i}$, $k_{j}$, $\Delta E_{\mathrm{e}, j}^{\mathrm{inel}}$
+\end{itemize}
+
+\subsection{Model outputs:}
+\begin{itemize}
+    \item[--] Densities of heavy species and electrons: $n_{i}$, $n_{\mathrm{e}}$
+    \item[--] Electron temperature $T_{\mathrm{e}}$
+\end{itemize}
+The rest of this chapter describes all the solved equations in detail.
+
+\section{Particle Density Balance}\label{sec:03-particle-density-balance}
+The time derivative of all heavy species densities is expressed as a sum of contributions from volumetric processes,
+flow sources and sinks and surface (diffusion) processes:
+\begin{equation}
+    \frac{\mathrm{d} n_{i}}{\mathrm{d} t} =
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{vol}} +
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{flow}} +
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{diff}}.
+    \label{eq:03-pbe}
+\end{equation}
+
+\subsection{Volumetric Reactions Contribution}\label{subsec:03-volumetric-reactions-contribution}
+The contribution of volumetric reactions is
+\begin{equation}
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{vol}} = \sum_{j} G_{ij} - \sum_{j} L_{ij},
+\end{equation}
+where $G_{ij}$ and $L_{ij}$ are contributions of generation and loss of $ n_{i} $ due to inelastic reaction $ j $.
+In greater detail, it can be written as
+
+\begin{equation}
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{vol}} =
+    \sum_{j} (a_{ij}^{\mathrm{R}} - a_{ij}^{\mathrm{L}}) R_{j},
+\end{equation}
+
+\begin{equation}
+    R_{j} = k_{j} \prod_{l} n_{lj}^{\mathrm{L}},
+    \label{eq:03-react-rate}
+\end{equation}
+where $n_{lj}^{\mathrm{L}}$ is the density of $l^{\mathrm{th}}$ species on the left hand side of reaction $j$.
+The reaction rate coefficient $k_{j}$ in this model takes form of the Arrhenius equation
+
+\begin{equation}
+    k_{j} =
+    A_{j} \left( \frac{\mathrm{T}_{\mathrm{g}}}{300 \mathrm{K}} \right)^{n_{j}}
+    \exp \left( - \frac{\mathrm{E}_{\mathrm{a}, j}}{\mathrm{T}_{\mathrm{g}}} \right)
+    \label{eq:03-arrh-1}
+\end{equation}
+for heavy species reactions $j$ (reactions where all the reactants are heavy species) and
+
+\begin{equation}
+    k_{j} = A_{j}
+    \left( \frac{T_{\mathrm{e}}}{1 \mathrm{eV}} \right)^{n_{j}}
+    \exp \left( - \frac{E_{\mathrm{a}, j}}{T_{\mathrm{e}}} \right)
+    \label{eq:03-arrh-2}
+\end{equation}
+for electron processes $j$ (reactions where at least one reactant is an electron).
+The Arrhenius parameters $A_{j}$, $n_{j}$ and $E_{\mathrm{a}, j}$ (or $\mathrm{E}_{\mathrm{a}, j}$) describe the
+collisional kinetics of the model.
+
+\subsection{Flow Contribution}\label{subsec:03-flow-contribution}
+The contribution of flow to the time evolution of heavy species densities will consist of inflow and outflow terms as
+well as a term regulating the pressure.
+\begin{equation}
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{flow}} =
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{flow}} ^{\mathrm{in}} +
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{flow}} ^{\mathrm{out}} +
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{flow}} ^{\mathrm{reg}}
+\end{equation}
+
+\subsubsection{Inflow}
+\begin{equation}
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{flow}} ^{\mathrm{in}} = \frac{Q_{i}'}{V},
+\end{equation}
+where
+\[
+Q_{i}' = \frac{N_{\mathrm{A}}}{V_{\mathrm{m}} \cdot 60} Q_{i} = 4.478 \times 10^{17} \cdot Q_{i}
+\]
+is the inflow expressed in [particles/sec] rather than in [sccm].
+$N_{\mathrm{A}} = 6.022 \times 10^{23}~\mathrm{mol}^{-1}$ is
+Avogadro constant and $V_{\mathrm{m}} = 2.241 \times 10^4~\mathrm{cm}^3 \mathrm{mol}^{-1}$ is the molar volume
+for ideal gas at standard temperature and pressure.
+
+\subsubsection*{Outflow}
+The outflow term is set in such a way that only neutrals are leaving the plasma region due to the flow,
+the neutral species flow rate is proportional to the species density and the total flow rate out of the plasma region
+is the same as total inflow rate:
+\begin{equation}
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{flow}} ^{\mathrm{out}} =
+    \begin{cases}
+        -\dfrac{\sum  Q_{i}'}{\sum n_{i_{0}}} \cdot \dfrac{n_{i}}{V} & \mathrm{neutrals}, \\
+        0 & \mathrm{ions},
+    \end{cases}
+\end{equation}
+where the index $i_{0}$ runs only over neutral species.
+
+\subsubsection{Pressure Regulation}
+A term regulating the plasma pressure is added to the particle balance equation, accounting for changes in $p$ due
+to dissociation/association processes and to diffusion losses and surface sources.
+This term, similarly to the outflow term, only acts upon the neutral species and can be viewed as an addition to the
+outflow term, or physically as adjusting a pressure-regulation valve between a plasma chamber and a pump,
+based on the instantaneous pressure.
+\begin{equation}
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{flow}} ^{\mathrm{reg}} =
+    \begin{cases}
+        -\dfrac{p - p_{0}}{p_{0}} \dfrac{n_{i}}{\tau_{p}} & \mathrm{neutrals}, \\
+        0 & \mathrm{ions}.
+    \end{cases}
+\end{equation}
+Here, $p$ is the instantaneous pressure from the state equation for an ideal gas
+\begin{equation}
+    p = k_{\mathrm{B}}T_{\mathrm{g}} \cdot \sum_{i} n_{i},
+\end{equation}
+and $\tau_{p}$ is a pressure recovery time scale.
+A value of $\tau_p = 10^{-3}$~s was found to yield satisfactory results for a wide range of process
+parameters.
+
+\subsection{Diffusion Contribution}\label{subsec:03-diffusion-contribution}
+The diffusion contribution towards the particle balance equation is ultimately controlled by vector of sticking
+coefficients $s_{i}$ and matrix of return coefficients $r_{ik}$ and the diffusion model:
+\begin{equation}
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{diff}} =
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{diff}}^{\mathrm{out}} +
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{diff}}^{\mathrm{in}}.
+\end{equation}
+
+\subsubsection{Diffusion losses}
+The rate of species loss to the plasma boundaries due to diffusion is expressed as
+\begin{equation}
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{diff}}^{\mathrm{out}} =
+    \frac{A}{V} \Gamma_{\mathrm{wall}, i},
+\end{equation}
+where $V$ and $A$ are plasma volume and plasma boundaries area respectively, while the wall fluxes
+$\Gamma_{\mathrm{wall}, i}$, as used (among others) by Kushner in GlobalKin~\cite{schroter_numerical_2018},
+is expressed as
+\begin{equation}
+    \Gamma_{\mathrm{wall}, i} = - \frac{D_i n_i s_i}{s_i \Lambda + \frac{4 D_i}{\overline{v}_{i}}}
+\end{equation}
+where
+\begin{equation}
+    \Lambda =
+    \left[
+        \left( \frac{\pi}{Z_{\mathrm{p}}} \right)^{2} + \left( \frac{2.405}{R_{\mathrm{p}}} \right)^{2}
+    \right]^{-1/2}.
+\end{equation}
+
+The diffusion coefficient is calculated separately for neutrals and ions.
+For positive and negative ions, the diffusion coefficient is the coefficient of ambipolar diffusion in
+electronegative plasma, as proposed by Stoeffels~\emph{et al.} in~\cite{stoffels_negative_1995}.
+\begin{equation}
+    D_{i} =
+    \begin{cases}
+        D_{i}^{\mathrm{free}} & \mathrm{neutrals}, \\
+        D_{+}^{\mathrm{free}} \dfrac{1 + \gamma (1 + 2 \alpha)}{1 + \alpha \gamma} & \mathrm{+ions}, \\
+        0 & \mathrm{-ions}.
+    \end{cases}
+\end{equation}
+Here, $\gamma = T_{\mathrm{e}}/T_{\mathrm{i}}$ and $\alpha = \sum n_{\mathrm{i^{-}}} / n_{\mathrm{e}}$.
+$D_{i} = 0$ for negative ions implies that no negative ions are reaching the plasma boundaries and therefore there
+are no negative ion diffusion losses.
+This approximation is justified by the positive plasma potential trapping the negative ions in the plasma bulk.
+It should be noted that the stated ambipolar diffusion coefficients are only valid for the case of
+$\alpha \ll \mu_{\mathrm{e}} / \mu_{\mathrm{i}}$, where $\mu$ are mobilities of electrons and ions respectively.
+The free diffusion coefficient for heavy species is calculated as
+\begin{equation}
+    D_{i}^{\mathrm{free}} = \frac{\pi}{8} \lambda_{i} \overline{v}_{i}.
+\end{equation}
+
+The mean free path $\lambda_{i}$ for all heavy species is
+\begin{equation}
+    \frac{1}{\lambda_{i}} = \sum_{k}n_{k}\sigma^{\mathrm{m}}_{ik} (1-\delta_{ik})
+    ,
+\end{equation}
+where $\sigma^{\mathrm{m}}_{ik}$ is the momentum transfer cross section, and the mean speed $\overline{v}_{i}$ is the
+mean thermal speed
+\begin{equation}
+    \overline{v}_{i} =
+    \begin{cases}
+        \left( \dfrac{8 k_{\mathrm{B}} \mathrm{T}_\mathrm{g}}{\pi M_{i}} \right)^{1/2} & \mathrm{neutrals}, \\
+        \left( \dfrac{8 k_{\mathrm{B}} \mathrm{T}_\mathrm{i}}{\pi M_{i}} \right)^{1/2} & \mathrm{ions}, \\
+    \end{cases}
+\end{equation}
+where the ion temperature is approximated, as proposed by Lee and Lieberman in~\cite{lee_global_1995},
+\begin{equation}
+    \mathrm{T_{i}} =
+    \begin{cases}
+        \left( 5800 - \mathrm{T_g} \right) \dfrac{0.133}{p} + \mathrm{T_g} & p > 0.133~\mathrm{Pa}, \\
+        5800 & p \le 0.133~\mathrm{Pa}. \\
+    \end{cases}
+\end{equation}
+
+The momentum transfer cross section $\sigma^{\mathrm{m}}_{ik}$ is for the purpose of this model crudely approximated
+with hard sphere model for neutral--neutral and ion--neutral collisions, and with momentum transfer for
+Rutherford scattering (as proposed by Lieberman and Lichtenberg in~\cite{lieberman_principles_2005}) for the
+case of ion--ion collisions:
+\begin{equation}
+    \sigma^{\mathrm{m}}_{ik} =
+    \begin{dcases*}
+        \left( \sigma^{\mathrm{LJ}}_{i} + \sigma^{\mathrm{LJ}}_{k} \right) ^{2} &
+        $i = i_{+}, i_{-}, i_{0}$, and $ k = k_{0}$, \\
+        &
+        $i = i_{0}$, and $k = k_{+}, k_{-}$, \\
+        \pi b_{0}^{2} \mathrm{ln}\left( \dfrac{2 \lambda_{\mathrm{De}}}{b_{0}} \right) &
+        $i = i_{+}, i_{-}$, and $k = k_{+}, k_{-}$, \\
+    \end{dcases*}
+\end{equation}
+with Debye length
+\begin{equation}
+    \lambda_{\mathrm{De}} = \left( \frac{\epsilon_{0} T_{\mathrm{e}}}{\mathrm{e} n_{\mathrm{e}}} \right)^{1/2},
+\end{equation}
+classical distance of closest approach
+\begin{equation}
+    b_{0} = \frac{q_{i}q_{k} \mathrm{e}^{2}}{2 \pi \epsilon_{0} m_{\mathrm{R}} v_{\mathrm{R}}^{2}},
+\end{equation}
+reduced mass
+\begin{equation}
+    m_{\mathrm{R}} = \frac{m_{i} m_{k}}{m_{i} + m_{k}},
+\end{equation}
+and the relative speed being approximated by the mean thermal speed
+\begin{equation}
+    v_{\mathrm{R}} = \overline{v}_{i}.
+\end{equation}
+
+The $\delta_{ik}$ term filters out self--collisions, as collisions between the same species do not affect the species
+collective behaviour
+\begin{equation}
+    \delta_{ik} =
+    \begin{cases}
+        1 & \mathrm{for}\; i = k, \\
+        0 & \mathrm{for}\; i \neq k.
+    \end{cases}
+\end{equation}
+
+Finally, the free diffusion coefficient for positive ions is approximated by
+\begin{equation}
+    D_{+}^{\mathrm{free}} = \overline{D_{i_{+}}^{\mathrm{free}}}.
+\end{equation}
+
+\subsubsection{Boundary sources}
+Each $k$-th species which is lost (or \emph{stuck}) to the plasma boundary can get returned as $i$-th species,
+introducing the boundary sources
+\begin{equation}
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{diff}}^{\mathrm{in}} =
+    - \sum_{k} r_{ik} \left( \frac{\delta n_{k}}{\delta t} \right)_{\mathrm{diff}}^{\mathrm{out}} =
+    \frac{A}{V} \sum_{k} \frac{D_k n_k s_k r_{ik}}{s_k \Lambda + \frac{4 D_k}{\overline{v}_{k}}}.
+    \label{eq:03-diff-source}
+\end{equation}
+
+\subsection{Minimal Allowed Species Density}\label{subsec:03-minimal-allowed-species-density}
+To prevent the ODE solver from \emph{overshooting} into unphysical negative densities, an additional \emph{artificial}
+term is added to the right-hand side of~\eqref{eq:03-pbe}, ensuring a finite minimal value of particle densities
+(which can be considered zero).
+This correction term takes form of
+\begin{equation}
+    \left( \frac{\delta n_{i}}{\delta t} \right)_{n_{\mathrm{min}}} =
+    \begin{cases}
+        \dfrac{n_{\mathrm{min}} - n_{i}}{\tau} & n_{i} < n_{\mathrm{min}}, \\
+        0 & n_{i} \ge n_{\mathrm{min}}.
+    \end{cases}
+\end{equation}
+Here, $n_{\min}$ is set to 1~particle/m$^{3}$ and $\tau$ to $1.0 \times 10^{-10}$~s,
+ensuring an adequately fast response.
+
+\section{Electron Energy Density Balance}\label{sec:03-electron-energy-density-balance}
+The balance equation for the electron energy density consists of contributions from the absorbed power,
+elastic and inelastic electron collisions, electron production and consumption and contribution from diffusion losses
+of electrons and ions.
+\begin{equation}
+    \frac{\mathrm{d} \varrho_{\mathrm{e}}}{\mathrm{d} t} =
+    \frac{P}{V\mathrm{e}} -
+    \left( \frac{\delta \varrho_{\mathrm{e}}}{\delta t} \right)_{\mathrm{el/inel}} -
+    \left( \frac{\delta \varrho_{\mathrm{e}}}{\delta t} \right)_{\mathrm{gen/loss}} -
+    \left( \frac{\delta \varrho_{\mathrm{e}}}{\delta t} \right)_{\mathrm{el \rightarrow walls}} -
+    \left( \frac{\delta \varrho_{\mathrm{e}}}{\delta t} \right)_{\mathrm{ion \rightarrow walls}}
+    \label{eq:03-eeb}
+\end{equation}
+
+\subsection{Contribution of Elastic and Inelastic Collisions}
+\label{subsec:03-contribution-of-elastic-and-inelastic-collisions}
+Electron energy density loss rate due to electron collisions is described as
+\begin{equation}
+    \left( \frac{\delta \varrho_{\mathrm{e}}}{\delta t} \right)_{\mathrm{el/inel}} =
+    \sum_{j} R_{j} \Delta E_{\mathrm{e}, j}
+    ,
+\end{equation}
+with the electron energy loss for $j$-th reaction $\Delta E_{\mathrm{e}, j}$ being
+\begin{equation}
+    \Delta E_{\mathrm{e}, j} =
+    \begin{cases}
+        \Delta E_{\mathrm{e}, j}^{\mathrm{inel}} & \mathrm{inelastic~collisions}, \\
+        3 \dfrac{m_{\mathrm{e}}}{M_{\mathrm{cp}, j}} (T_{\mathrm{e}} - T_{\mathrm{g}}) & \mathrm{elastic~collisions}, \\
+        0 & \mathrm{heavy~species~collisions~or}~a_{\mathrm{e}j}^{\mathrm{R}}=0,
+    \end{cases}
+\end{equation}
+and
+\begin{equation}
+    T_{\mathrm{e}} = \frac{2}{3} \frac{\varrho_{\mathrm{e}}}{n_{\mathrm{e}}}.
+\end{equation}
+The electron density $n_{\mathrm{e}}$ is not resolved explicitly, but rather calculated from plasma charge neutrality
+\begin{equation}
+    n_{\mathrm{e}} = \sum_{i} n_{i}q_{i}.
+\end{equation}
+For that reason, $T_{\mathrm{e}}$ might reach non-physically low values, when $\varrho_{\mathrm{e}}$ governed directly
+by~\eqref{eq:03-eeb} is much greater than $\sum_{i} n_{i}q_{i}$.
+A correction is introduced to $T_{\mathrm{e}}$ in the form of
+\begin{equation}
+    T_{\mathrm{e}} = \max \left( T_{\mathrm{g}}, \frac{2}{3} \frac{\varrho_{\mathrm{e}}}{n_{\mathrm{e}}} \right),
+\end{equation}
+to help with the solution stability, as the electron temperature will converge to the neutral gas temperature at low
+electron energy, due to dominance of elastic processes.
+
+\subsection{Electron Generation and Loss Contribution}\label{subsec:03-electron-generation-and-loss-contribution}
+Rate of change of electron energy density due to generation and loss of electrons is described by
+\begin{equation}
+    \left( \frac{\delta \varrho_{\mathrm{e}}}{\delta t} \right)_{\mathrm{gen/loss}} =
+    \frac{3}{2} T_{\mathrm{e}} \sum_{j} (a_{\mathrm{e}j}^{\mathrm{R}} - a_{\mathrm{e}j}^{\mathrm{L}}) R_{j}.
+\end{equation}
+
+\subsection{Energy Loss by Electron Transport}\label{subsec:03-energy-loss-by-electron-transport}
+Under a Maxwellian energy distribution assumption, each electron lost through the plasma boundary sheath takes away
+$2k_{\mathrm{B}}\mathrm{T_e}$ of energy with it~\cite{lieberman_principles_2005}, which gives
+\begin{equation}
+    \left( \frac{\delta \varrho_{\mathrm{e}}}{\delta t} \right)_{\mathrm{el \rightarrow walls}} =
+    - 2 T_{\mathrm{e}} \left( \frac{\delta n_{\mathrm{e}}}{\delta t} \right)_{\mathrm{walls}}
+    ,
+\end{equation}
+while the total charge flux needs to be zero, yielding
+\begin{equation}
+    \left( \frac{\delta n_{\mathrm{e}}}{\delta t} \right)_{\mathrm{walls}} =
+    \sum_{i} q_{i} \left( \frac{\delta n_{i}}{\delta t} \right)_{\mathrm{diff}}.
+\end{equation}
+
+\subsection{Energy Loss by Ion Transport}\label{subsec:03-energy-loss-by-ion-transport}
+If it is assumed, that ions leave the plasma boundary sheath with the Bohm velocity, each positive ion removed from
+the plasma takes away $\frac{1}{2} k_{\mathrm{B}} \mathrm{T_e}$ of kinetic energy, as well as sheath voltage
+acceleration energy~\cite{lieberman_principles_2005}
+\begin{equation}
+    \left( \frac{\delta \varrho_{\mathrm{e}}}{\delta t} \right)_{\mathrm{ion \rightarrow walls}} =
+    - \frac{1}{2} T_{\mathrm{e}} \sum_{i_{+}} \left( \frac{\delta n_{i_{+}}}{\delta t} \right)_{\mathrm{diff}}
+    - \overline{V_{\mathrm{s}}} \sum_{i_{+}} q_{i_{+}} \left( \frac{\delta n_{i_{+}}}{\delta t} \right)_{\mathrm{diff}}.
+\end{equation}
+The last open parameter in the system is the mean sheath voltage $\overline{V_{\mathrm{s}}}$, which,
+according to Lieberman and Lichtenberg~\cite{lieberman_principles_2005}, can be approximated by
+\begin{equation}
+    \overline{V_{\mathrm{s}}} =
+    T_{\mathrm{e}} \cdot \mathrm{ln} \left( \frac{\overline{M_{i_{+}}}}{2 \pi m_{\mathrm{e}}} \right)^{1/2}.
+\end{equation}
+This value of $\overline{V_{\mathrm{s}}}$ is only consistent with ICP plasma sources.
+
+\subsection{Minimal Allowed Electron Energy Density}\label{subsec:03-minimal-allowed-electron-energy-density}
+To prevent the ODE solver from \emph{overshooting} into unphysical negative $\varrho_{\mathrm{e}}$, an additional
+\emph{artificial} term is added to the right-hand side of~\eqref{eq:03-eeb}, ensuring a finite minimal value of electron
+energy density (which can be considered zero).
+This correction term takes form of
+\begin{equation}
+    \left( \frac{\delta \varrho_{\mathrm{e}}}{\delta t} \right)_{\varrho_{\mathrm{min}}} =
+    \begin{cases}
+        \dfrac{\varrho_{\mathrm{e, min}} - \varrho_{\mathrm{e}}}
+              {\tau} &
+        \varrho_{\mathrm{e}} < \varrho_{\mathrm{e, min}}, \\
+        0 &
+        \varrho_{\mathrm{e}} \ge \varrho_{\mathrm{e, min}}.
+    \end{cases}
+\end{equation}
+Here, $\varrho_{\mathrm{e}, \min}$ was set to 1~eV/m$^{3}$ and $\tau$ to $1.0 \times 10^{-10}$~s,
+ensuring an adequately fast response.

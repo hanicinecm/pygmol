@@ -19,3 +19,74 @@
 **********************
 Introduction to PyGMol
 **********************
+
+**PyGMol** (the **Py**thon **G**lobal **Mo**de**l**) is a simple-tu-use 0D model, or
+global model, for modeling plasma chemistry.
+
+At its current form, the ``pygmol`` package defines the equations belonging to the
+system of ordinary differential equations (ODE) which govern the plasma chemistry, and
+solves them using the ``scipy.integrate.solve_ivp`` solver.
+Quantities resolved presently by the ``pygmol`` model are the densities of all the
+heavy species specified by the chemistry input, electron density, and electron
+temperature (while heavy-species temperature is treated as a parameter to the model).
+
+The equations being solved for by the model are documented in their full form in the
+equations_ document. The package inner workings, structure and some useful examples
+are discussed in the ``pygmol`` documentation_. For further info, refer to the codebase
+docstrings.
+
+
+Installation:
+=============
+
+The ``pygmol`` package can be installed either from PyPI_
+
+.. code-block:: bash
+
+    python3 -m pip install pygmol
+
+or from the GitHub_ page
+
+.. code-block:: bash
+
+    python3 -m pip install git+https://github.com/hanicinecm/pygmol.git
+
+
+For Developers:
+===============
+It goes without saying that any development should be done in a clean virtual
+environment.
+After cloning or forking the project from its GitHub_ page, ``pygmol`` can be
+installed into the virtual environment in the editable mode by running
+
+.. code-block:: bash
+
+    pip install -e .[dev]
+
+The ``[dev]`` extra installs (apart from the package dependencies) also several
+development-related packages, such as ``pytest``, ``coverage``, ``ipython``, or
+``black``.
+The unit tests and run tests can then be executed by running (from the project root
+directory)
+
+.. code-block:: bash
+
+    pytest --cov
+    pytest run_tests
+
+respectively.
+
+The project does not have the ``requirements.txt`` file by design, as all the package
+dependencies are rather handled by the ``setup.py``.
+The package therefore needs to be installed locally to run the tests, which grants the
+testing process another layer of usefulness.
+
+Docstrings in the project adhere to the numpydoc_ styling.
+The project code is formatted by ``black``.
+
+
+.. _equations: https://raw.githubusercontent.com/hanicinecm/pygmol/master/docs/equations.pdf
+.. _documentation: https://github.com/hanicinecm/pygmol/tree/master/docs/index.rst
+.. _GitHub: https://github.com/hanicinecm/pygmol
+.. _PyPI: https://pypi.org/project/pygmol/
+.. _numpydoc: https://numpydoc.readthedocs.io/en/latest/format.html

@@ -1,0 +1,73 @@
+\documentclass[12pt,a4paper]{article}
+
+% packages
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{bibentry}
+\usepackage[format=hang,font=small,labelfont=bf]{caption}  % caption text formating
+\usepackage{array}
+\usepackage{geometry}
+\usepackage[noadjust]{cite}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{lipsum}
+\usepackage{fancyhdr}
+\usepackage{bm}
+\usepackage{indentfirst}
+\usepackage{xcolor}
+
+% some settings
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}  % left-aligned text in fixed olumn
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}  % right-aligned text in fixed column
+\geometry{a4paper, top=30mm, bottom=30mm, left=30mm, right=30mm}  % total is 210 x 297 mm
+
+% hyperlinks:
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+% bold vectors notation and bold unit vectors:
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\newcommand{\oldhat}{\hat}
+\renewcommand{\hat}[1]{\oldhat{\mathbf{#1}}}
+
+\setcounter{secnumdepth}{0}
+
+% footer
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0.0pt}
+\fancyhf{}
+%\setlength{\footskip}{50pt}
+\cfoot{\thepage}
+\lfoot{\tiny \vspace{5\baselineskip} \color{darkgray}
+    Author: \href{https://github.com/hanicinecm}{Martin Hanicinec},
+    PyGMol version: \href{https://pypi.org/project/pygmol/1.1.0/}{1.1.0},
+    Documentation compiled on: \today
+}
+
+\begin{document}
+
+\section*{Python Global Model Documentation}
+
+This document describes the PyGMol global model and explicitly the equations which are being solved for inside in the
+model, with the intention, to give the most complete and transparent description.
+
+\tableofcontents
+\newpage
+
+\include{pygmol_doc_content}
+
+
+\bibliographystyle{ieeetr}
+\bibliography{pygmol_doc}
+\addcontentsline{toc}{section}{References}
+
+
+\end{document}
