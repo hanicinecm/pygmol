@@ -8,9 +8,13 @@ The package is designed to be easily tweakable by anyone who speaks python reaso
 At its current form, the ``pygmol`` package defines the
 system of ordinary differential equations (ODE) which govern the plasma chemistry, and
 solves them using the ``scipy.integrate.solve_ivp`` solver.
-Quantities resolved presently by the ``pygmol`` model are the densities of all the
-heavy species specified by the chemistry input, electron density, and electron
-temperature (while heavy-species temperature is treated as a parameter to the model).
+Quantities resolved presently by the ``pygmol`` model are
+
+- the densities of all the heavy species specified by the ``chemistry`` input
+- electron density
+- electron temperature
+
+(while heavy-species temperature is treated as a parameter to the model).
 
 The equations being solved for by the model are documented in their full form in the
 `equations math`_ document.
