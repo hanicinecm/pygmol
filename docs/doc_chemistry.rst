@@ -164,12 +164,16 @@ reaction has two electrons and He+ as reactants, and one electron and He* as pro
 Finally, the ``chemistry`` module also provides a function for validation of ``Chemistry``
 instances (this is used under the hood by the global model).
 
+.. code-block:: pycon
+
     >>> from pygmol.chemistry import validate_chemistry
     >>> validate_chemistry(chemistry=argon_oxygen_chemistry)
 
 This will raise an appropriate custom error if the attributes/properties of the
 ``chemistry`` instance passed is inconsistent in some way, e.g. if length of the species
 attributes do not match:
+
+.. code-block:: pycon
 
     >>> len(argon_oxygen_chemistry.species_ids)
     24
