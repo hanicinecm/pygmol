@@ -90,10 +90,12 @@ necessary for running and testing the code in this documentation:
 
     >>> import sys
     >>> from pathlib import Path
+
     >>> # I will be importing some example chemistry and plasma parameters objects
     >>> # from the documentation directory (not part of the package), so it goes to the
     >>> # system path:
     >>> sys.path.append(str(Path(".") / "docs"))
+
     >>> # I have prepared a function which prints pandas.DataFrames (object of choice
     >>> # for the model outputs) in a controlled way. This helps with doc-testing:
     >>> from utils import print_dataframe

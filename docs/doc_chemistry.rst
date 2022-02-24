@@ -8,7 +8,7 @@ parameter to the global model.
 
 The best way into understanding the interface expected by the global model is to read
 the `source code <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/abc.py>`_
-of the abstraction itself, or to see the example_chemistry_, compiled based on
+of the abstraction itself, or to see the annotated example_chemistry_, compiled based on
 Turner [1]_.
 
 One note is in order: Any fast glance at the example_chemistry_ example makes it very clear that
@@ -34,7 +34,8 @@ First, some maintenance is needed, so the following snippets can be doc-tested:
     >>> # add the docs directory into the system path:
     >>> sys.path.append(str(Path(".") / "docs"))
 
-    >>> from example_chemistry import argon_oxygen_chemistry
+    >>> from example_chemistry import ArO2Chemistry
+    >>> argon_oxygen_chemistry = ArO2Chemistry()
     >>> import pygmol
 
 Now, the example chemistry:
