@@ -127,7 +127,8 @@ Solution
 --------
 
 In the case of a successful solution, we can access it (in the final, post-processed
-form) as a ``pandas.DataFrame``, such as
+form) as a ``pandas.DataFrame`` (index of the dataframe is irrelevant and not printed
+out):
 
 .. code-block:: pycon
 
@@ -151,7 +152,7 @@ The columns of the solution dataframe are controlled by the ``Equations`` instan
 by the ``Model``, see the `Equations <equations.rst>`_ documentation. For the native
 ``ElectronEnergyEquations``
 (`source code <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/equations.py>`_)
-class, those are (apart time ``"t"``) the
+class, those are (apart time ``"t"``) the heavy
 species names (``chemistry.species_ids``) for their densities in [SI], ``"e"`` for
 the electron density, and ``["T_e", "T_n", "p", "P"]`` for electron and neutral
 temperatures (in eV, and K respectively), pressure [Pa], and finally power [W].
@@ -166,7 +167,7 @@ Reaction rates
 --------------
 Reaction rates in time (in m-3/s) of all the reactions specified by the ``chemistry``,
 identified by their IDs as the dataframe columns (``chemistry.reactions_ids``).
-Index of the dataframe is irrelevant (and not printed out).
+The index of the dataframe is irrelevant (and not printed out).
 
 .. code-block:: pycon
 
@@ -188,10 +189,16 @@ Index of the dataframe is irrelevant (and not printed out).
 
 Rates of change of species densities
 ------------------------------------
+The rates of change of species densities (in m-3/s) can be accessed for any given time
+``t`` by the ``get_rates_matrix_total`` method, and will show the values for each heavy
+species (excluding electrons and the arbitrary heavy species ``"M"``), and per each
+volumetric reaction or surface reaction process and for the closest time frame to ``t``.
+This time, the dataframe is indexed by the human-readable reaction strings, if supplied
+by the ``chemistry`` (``chemistry.reactions_strings``).
 
 .. code-block:: pycon
 
-    >>> rates_matrix = model.get_rates_matrix_total()
+    >>> rates_matrix = model.get_rates_matrix_total(t=0.015)  # at the end of the time domain
     >>> print_dataframe(rates_matrix, max_cols=6, hide_index=False)
                                               He     He*     He+  ...     O3-     O4+     O4-
     He + O2(v) -> He + O2 (R272)         0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
@@ -206,6 +213,11 @@ Rates of change of species densities
     e + O2(b1Su+) -> e + O2(b1Su+) (R69) 0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
     e + O2(a1Du) -> e + O2(a1Du) (R43)   0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
     ...
+
+Admittedly, not much is happening in the previous example, so lets limit the scope to
+just 3 selected species and just the processes which affect their densities:
+
+.. code-block:: pycon
 
     >>> selected = rates_matrix[["O", "O2(a1Du)", "O3"]]
     >>> selected = selected.loc[(selected!=0).any(axis=1)]
@@ -224,6 +236,12 @@ Rates of change of species densities
     O2 + O2 -> O + O + O2 (R124)         5.7e-54   0.0e+00  0.0e+00
     ...
 
+General diagnostics
+-------------------
+Finally, a general diagnostics method is provided, returning the time dependence of any
+intermediate result defined by the concrete ``Equations`` class used by the model.
+For example, the *Debye length* can be requested in time by
+
     >>> debye_length = model.diagnose("debye_length")
     >>> print_dataframe(debye_length)
              t  debye_length
@@ -239,6 +257,22 @@ Rates of change of species densities
        1.5e-02       3.9e-05
        1.5e-02       3.9e-05
     ...
+
+assuming that ``model.equations`` has the ``get_debye_length`` method accepting the
+state vector *y* (see `Equations <equations.rst>`_).
+
+Other functionality
+-------------------
+The examples above only cover the selected functionality of the ``Model``. Other
+useful methods might include
+
+- ``get_surface_loss_rates``, ``get_rates_matrix_volume``, ``get_rates_matrix_surface``,
+  ``get_{*}_final``.
+
+And, of course, reading through the source code will provide much more insight into the
+package than any documentation ever will.
+
+So dive in ...
 
 
 .. _`equations math`: https://github.com/hanicinecm/pygmol/blob/master/docs/math.pdf
