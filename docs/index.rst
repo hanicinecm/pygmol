@@ -153,10 +153,10 @@ by the ``Model``, see the `Equations <equations.rst>`_ documentation. For the na
 class, those are (apart time ``"t"``) the
 species names (``chemistry.species_ids``) for their densities in [SI], ``"e"`` for
 the electron density, and ``["T_e", "T_n", "p", "P"]`` for electron and neutral
-temperatures ([eV], and [K] respectively), pressure [Pa], and finally power [W].
+temperatures (in eV, and K respectively), pressure [Pa], and finally power [W].
 The neutral temperature is treated as a constant parameter by ``ElectronEnergyEquations``
 and stays therefore at it's initial value as defined by the ``plasma_parameters`` passed
-to ``Model``.
+to the ``Model``.
 
 A number of additional data extracted from a successful solution are provided by the
 ``Model``:
@@ -166,6 +166,8 @@ Reaction rates
 Reaction rates in time (in [SI]) of all the reactions specified by the ``chemistry``,
 identified by their IDs as the dataframe columns (``chemistry.reactions_ids``).
 Index of the dataframe is irrelevant (and not printed out).
+
+.. code-block:: pycon
 
     >>> reaction_rates = model.get_reaction_rates()
     >>> print_dataframe(reaction_rates)
@@ -186,6 +188,7 @@ Index of the dataframe is irrelevant (and not printed out).
 Rates of change of species densities
 ------------------------------------
 
+.. code-block:: pycon
 
     >>> rates_matrix = model.get_rates_matrix_total()
     >>> print_dataframe(rates_matrix, max_cols=6, hide_index=False)
