@@ -26,7 +26,8 @@ Package structure:
 ==================
 The ``pygmol`` package has 5 modules in total:
 
-- abc_: The ``abc`` module
+- ``abc``: The ``abc`` module
+  (`source <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/abc.py>`_)
   defines all the abstractions used as dependencies in the package. The ``abc.Chemistry``
   abstract base class (ABC) defines the interface ``pygmol`` expects from objects
   describing chemistry. The ``abc.PlasmaParameters`` ABC defines the interface for the
@@ -36,9 +37,12 @@ The ``pygmol`` package has 5 modules in total:
   ``PlasmaParameters`` and ``Equations`` abstractions are required by the global model.
   Alternatively.
 
-- chemistry_, plasma_parameters_:
+- ``chemistry``, ``plasma_parameters``:
   The package currently does not provide concrete subclasses of ``Chemistry`` and
-  ``PlasmaParameters`` abstractions, but ``chemistry`` and ``plasma_parameters`` modules
+  ``PlasmaParameters`` abstractions, but ``chemistry`` module
+  (`source <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/chemistry.py>`_)
+  and ``plasma_parameters`` module
+  (`source <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/plasma_parameters.py>`_)
   contain class factories
   (or rather instance factories) returning instances of a purposefully built concrete
   subclasses of the abstractions, ``ChemistryFromDict`` and ``PlasmaParametersFromDict``.
@@ -48,16 +52,24 @@ The ``pygmol`` package has 5 modules in total:
   the chemistry and plasma parameters data. Those are used under the hood of the
   global model class asserting the consistency of the input parameters passed to the model.
 
-- equations_: The ``equations`` module blah blah...
+- ``equations``: The ``equations``
+  (`source <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/equations.py>`_)
+  blah blah...
 
-- model_: This ``model`` module
+- ``model``: The ``model`` module
+  (`source <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/model.py>`_)
   is the main access point to the ``pygmol`` functionality, namely its ``Model`` class,
-  representing the global model.
+  representing the global model. ``Model`` using the native ``ElectronEnergyEquations``
+  subclass of the ``Equations`` abstraction for constructing the ODE system based on the
+  chemistry and plasma parameters passed as arguments.
 
 The ``Chemistry``, ``PlasmaParameters`` and ``Equations`` abstractions deserve their own
-separate documentation pages
-(`Chemistry <doc_chemistry.rst>`_, `PlasmaParameters <doc_plasma_parameters.rst>`_,
-`Equations <doc_equations.rst>`_).
+separate documentation pages:
+
+- `Chemistry <doc_chemistry.rst>`_
+- `PlasmaParameters <doc_plasma_parameters.rst>`_
+- `Equations <doc_equations.rst>`_
+
 The rest of this documentation page will look at the ``Model`` class in greater detail.
 
 
@@ -322,11 +334,6 @@ So dive in ...
 
 
 .. _`equations math`: https://github.com/hanicinecm/pygmol/blob/master/docs/math.pdf
-.. _abc: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/abc.py
-.. _chemistry: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/chemistry.py
-.. _plasma_parameters: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/plasma_parameters.py
-.. _equations: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/equations.py
-.. _model: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/model.py
 .. _example_chemistry: https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py
 .. _example_plasma_parameters: https://github.com/hanicinecm/pygmol/blob/master/docs/example_plasma_parameters.py
 
