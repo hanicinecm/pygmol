@@ -42,20 +42,19 @@ snippets. This following code block is not normally necessary:
 
 
 The ``Model`` class takes two inputs:
-  * ``chemistry`` - an instance of any concrete subclass of the ``pygmol.abc.Chemistry``
-    abstract base class
-  * ``plasma_parameters`` - an instance of any concrete subclass of the
-    ``pygmol.abc.PlasmaParameters`` abstract base class.
-For the purpose of this demonstration, I have prepared an example
-`argon_oxygen_chemistry <https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py>`_
-describing an Ar/O2 plasma, as well as example
-`argon_oxygen_plasma_parameters <https://github.com/hanicinecm/pygmol/blob/master/docs/example_plasma_parameters.py>`_.
+
+- ``chemistry`` - an instance of any concrete subclass of the ``pygmol.abc.Chemistry``
+  abstract base class
+
+- ``plasma_parameters`` - an instance of any concrete subclass of the
+  ``pygmol.abc.PlasmaParameters`` abstract base class.
+
+For the purpose of this demonstration, I have prepared an example argon_oxygen_chemistry_
+describing an Ar/O2 plasma, as well as an example argon_oxygen_plasma_parameters_.
+
 Both inputs are based on Turner [1]_.
 Again, these are not part of the ``pygmol`` package, but rather only live for this
 documentation:
-
-.. [1] Miles M Turner 2015 *Plasma Sources Sci. Technol.* **24** 035027
-
 
 .. code-block:: pycon
 
@@ -83,6 +82,17 @@ they adhere to the exact interface defined by the abstract ``Chemistry`` and
     ... }
 
 
+Both inputs to the ``Model`` class have their own documentation pages explaining them in
+detail: `Chemistry <chemistry.rst>`_, `PlasmaParameters <plasma_parameters.rst>`_.
+One note is in order: A fast glance at the argon_oxygen_chemistry_ makes very clear that
+this is a *terrible* format for defining static chemistry data. Instead, the intention
+is that in real situation, the ``chemistry`` passed to the ``Model`` will be an instance
+of much more powerful class (coded responsibly by the user either inheriting from
+``pygmol.abc.Chemistry`` or mirroring the interface exactly), which defines the abstract
+attributes needed as dynamic ``@properties``, rather than class attributes as used in
+the example.
+
+With that out of the way, let us instantiate our model:
 
 .. code-block:: pycon
 
@@ -90,10 +100,22 @@ they adhere to the exact interface defined by the abstract ``Chemistry`` and
 
     >>> model = Model(argon_oxygen_chemistry, argon_oxygen_params_dict)
 
+and run it (and see if the solver was successful):
+
+.. code-block:: pycon
+
     >>> model.run()
 
     >>> model.success()
     True
+
+Note: If the solution is *not* successful, the ``ModelSolutionError`` will be raised and
+all the info returned by the ``scipy.integrate.solve_ivp`` will be stored under
+``model.solution_raw``.
+In the case of a successful solution, we can access it in the ``pandas.DataFrame`` form
+such as
+
+.. code-block:: pycon
 
     >>> solution = model.get_solution()
     >>> print_table(solution)
@@ -177,4 +199,9 @@ they adhere to the exact interface defined by the abstract ``Chemistry`` and
     ...
 
 
+.. _argon_oxygen_chemistry: https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py>
+.. _argon_oxygen_plasma_parameters: https://github.com/hanicinecm/pygmol/blob/master/docs/example_plasma_parameters.py
 .. _equations: https://github.com/hanicinecm/pygmol/blob/master/docs/equations.pdf
+
+
+.. [1] Miles M Turner 2015 *Plasma Sources Sci. Technol.* **24** 035027
