@@ -52,8 +52,13 @@ The ``pygmol`` package has 5 modules in total:
 
 - model_: This ``model`` module
   is the main access point to the ``pygmol`` functionality, namely its ``Model`` class,
-  representing the global model. The rest of this documentation page will look at the
-  ``Model`` in greater detail.
+  representing the global model.
+
+The ``Chemistry``, ``PlasmaParameters`` and ``Equations`` abstractions deserve their own
+separate documentation pages
+(`Chemistry <doc_chemistry.rst>`_, `PlasmaParameters <doc_plasma_parameters.rst>`_,
+`Equations <doc_equations.rst>`_).
+The rest of this documentation page will look at the ``Model`` class in greater detail.
 
 
 The ``Model``:
@@ -121,9 +126,9 @@ they adhere to the exact interface defined by the abstract ``Chemistry`` and
 
 
 Both inputs to the ``Model`` class have their own documentation pages explaining them in
-detail: `Chemistry <chemistry.rst>`_, `PlasmaParameters <plasma_parameters.rst>`_.
+detail: `Chemistry <doc_chemistry.rst>`_, `PlasmaParameters <doc_plasma_parameters.rst>`_.
 
-One note is in order: Any fast glance at the argon_oxygen_chemistry_ example makes it very clear that
+One note is in order: Any fast glance at the example_chemistry_ example makes it very clear that
 this is a *terrible* format for defining static chemistry data. Instead, the intention
 is that in real situation, the ``chemistry`` passed to the ``Model`` will be an instance
 of much more powerful class (coded responsibly by the user either inheriting from
@@ -186,9 +191,8 @@ out):
     ...
 
 The columns of the solution dataframe are controlled by the ``Equations`` instance used
-by the ``Model``, see the `Equations <equations.rst>`_ documentation. For the native
+by the ``Model``, see the `Equations <doc_equations.rst>`_ documentation. For the native
 ``ElectronEnergyEquations``
-(`source code <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/equations.py>`_)
 class, those are (apart time ``"t"``) the heavy
 species names (``chemistry.species_ids``) for their densities in [SI], ``"e"`` for
 the electron density, and ``["T_e", "T_n", "p", "P"]`` for electron and neutral
@@ -298,7 +302,7 @@ For example, the *Debye length* can be requested in time by
     ...
 
 assuming that ``model.equations`` has the ``get_debye_length`` getter method, which
-accepts the state vector *y* (see `Equations <equations.rst>`_).
+accepts the state vector *y* (see `Equations <doc_equations.rst>`_).
 
 Other functionality
 -------------------
@@ -318,11 +322,11 @@ So dive in ...
 
 
 .. _`equations math`: https://github.com/hanicinecm/pygmol/blob/master/docs/math.pdf
-.. _abc: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/abc.py>
-.. _chemistry: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/chemistry.py>
-.. _plasma_parameters: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/plasma_parameters.py>
-.. _equations: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/equations.py>
-.. _model: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/model.py>
+.. _abc: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/abc.py
+.. _chemistry: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/chemistry.py
+.. _plasma_parameters: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/plasma_parameters.py
+.. _equations: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/equations.py
+.. _model: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/model.py
 .. _example_chemistry: https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py
 .. _example_plasma_parameters: https://github.com/hanicinecm/pygmol/blob/master/docs/example_plasma_parameters.py
 

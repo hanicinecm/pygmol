@@ -86,7 +86,7 @@ The project code is formatted by ``black``.
 
 
 .. _equations: https://github.com/hanicinecm/pygmol/blob/master/docs/math.pdf
-.. _documentation: https://github.com/hanicinecm/pygmol/tree/master/docs/index.rst
+.. _documentation: https://github.com/hanicinecm/pygmol/tree/master/docs/doc_index.rst
 .. _GitHub: https://github.com/hanicinecm/pygmol
 .. _PyPI: https://pypi.org/project/pygmol/
 .. _numpydoc: https://numpydoc.readthedocs.io/en/latest/format.html
