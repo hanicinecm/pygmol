@@ -47,15 +47,15 @@ Now, the example chemistry:
     >>> isinstance(argon_oxygen_chemistry, pygmol.abc.Chemistry)
     True
 
-    >>> for r_str in argon_oxygen_chemistry.reactions_strings:
-    ...     print(r_str)
+    >>> for sp_id in argon_oxygen_chemistry.species_ids:
+    ...     print(sp_id)
     He
     He*
     He+
     ...
     O3-
     O4+
-    O4-]
+    O4-
 
     >>> for r_str in argon_oxygen_chemistry.reactions_strings:
     ...     print(r_str)
@@ -106,13 +106,15 @@ and return to the system as two ``'He'`` neutrals:
 The reactions kinetics is parametrized by the Arrhenius formula (see the
 `equations math`_). The following snipped shows, that the reaction
 
-.. math::
+.. raw:: html
 
-   O + O(1S) \\rightarrow O + O
+    O + O(<sup>1</sup>S) → O + O
 
 has the rate coefficient of
 
+.. raw:: html
 
+    <i>k</i> = 2.5x10<sup>-17</sup> (<i>T</i><sub>n</sub>/300K)<sup>0</sup> exp(-300/<i>T</i><sub>n</sub>)
 
 .. _example_chemistry: https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py
 .. _`equations math`: https://github.com/hanicinecm/pygmol/blob/master/docs/math.pdf
