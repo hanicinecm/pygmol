@@ -11,7 +11,7 @@ heavy species specified by the chemistry input, electron density, and electron
 temperature (while heavy-species temperature is treated as a parameter to the model).
 
 The equations being solved for by the model are documented in their full form in the
-equations_ document.
+`equations math`_ document.
 
 The following text describes their implementation as the ``pygmol`` package.
 
@@ -241,7 +241,7 @@ Rates of change of species densities
     ...
 
 
-.. _equations: https://github.com/hanicinecm/pygmol/blob/master/docs/math.pdf
+.. _`equations math`: https://github.com/hanicinecm/pygmol/blob/master/docs/math.pdf
 .. _argon_oxygen_chemistry: https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py
 .. _argon_oxygen_plasma_parameters: https://github.com/hanicinecm/pygmol/blob/master/docs/example_plasma_parameters.py
 
