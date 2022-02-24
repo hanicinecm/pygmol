@@ -22,34 +22,73 @@ To be added...
 
 The ``Model``:
 ==============
-To be added...
+This section shows the basic example of usage of the ``model.Model`` class for modeling
+plasma chemistry.
+
+Firstly, some maintenance is in order, to help with doc-testing the following code
+snippets. This following code block is not normally necessary:
 
 .. code-block:: pycon
 
     >>> import sys
     >>> from pathlib import Path
-    >>> import pandas as pd
+    >>> # I will be importing some example chemistry and plasma parameters objects
+    >>> # from the documentation directory (not part of the package), so it goes to the
+    >>> # system path:
     >>> sys.path.append(str(Path(".") / "docs"))
-
-    >>> def print_table(df: pd.DataFrame, max_cols: int = 10, hide_index: bool = True):
-    ...     if hide_index:
-    ...         df = df.copy()
-    ...         df.index = [""] * len(df)
-    ...     with pd.option_context(
-    ...         "display.float_format", "{:.1e}".format,
-    ...         "display.max_rows", 10,
-    ...         "display.max_columns", max_cols,
-    ...         "display.expand_frame_repr", False
-    ...     ):
-    ...         print(df)
+    >>> # I have prepared a function which prints pandas.DataFrames (object of choice
+    >>> # for the model outputs) in a controlled way. This helps with doc-testing:
+    >>> from utils import print_table
 
 
-    >>> from pygmol.model import Model
+The ``Model`` class takes two inputs:
+  * ``chemistry`` - an instance of any concrete subclass of the ``pygmol.abc.Chemistry``
+    abstract base class
+  * ``plasma_parameters`` - an instance of any concrete subclass of the
+    ``pygmol.abc.PlasmaParameters`` abstract base class.
+For the purpose of this demonstration, I have prepared an example
+`argon_oxygen_chemistry <https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py>`_
+describing an Ar/O2 plasma, as well as example
+`argon_oxygen_plasma_parameters <https://github.com/hanicinecm/pygmol/blob/master/docs/example_plasma_parameters.py>`_.
+Both inputs are based on Turner [1]_.
+Again, these are not part of the ``pygmol`` package, but rather only live for this
+documentation:
+
+.. [1] Miles M Turner 2015 *Plasma Sources Sci. Technol.* **24** 035027
+
+
+.. code-block:: pycon
 
     >>> from example_chemistry import argon_oxygen_chemistry
     >>> from example_plasma_parameters import argon_oxygen_plasma_parameters
 
-    >>> model = Model(argon_oxygen_chemistry, argon_oxygen_plasma_parameters)
+
+In fact, the ``Model`` class constructor accepts also ``dict`` as both parameters, if
+they adhere to the exact interface defined by the abstract ``Chemistry`` and
+``PlasmaParameters`` classes. So the following ``dict`` input is equivalent to
+``argon_oxygen_plasma_parameters``:
+
+.. code-block:: pycon
+
+    >>> argon_oxygen_params_dict = {
+    ...     "radius": 0.000564,  # [m]
+    ...     "length": 0.03,  # [m]
+    ...     "pressure": 1e5,  # [Pa]
+    ...     "power": (0.3, 0.3, 0, 0, 0.3, 0.3, 0, 0, 0.3, 0.3),  # [W]
+    ...     "t_power": (0, 0.003, 0.003, 0.006, 0.006, 0.009, 0.009, 0.012, 0.012, 0.015),  # [s]
+    ...     "feeds": {"O2": 0.3, "He": 300.0},  # [sccm]
+    ...     "temp_e": 1.0,  # [eV]
+    ...     "temp_n": 305.0,  # [K]
+    ...     "t_end": 0.015  # [s]
+    ... }
+
+
+
+.. code-block:: pycon
+
+    >>> from pygmol.model import Model
+
+    >>> model = Model(argon_oxygen_chemistry, argon_oxygen_params_dict)
 
     >>> model.run()
 
