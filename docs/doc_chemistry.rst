@@ -104,17 +104,68 @@ and return to the system as two ``'He'`` neutrals:
     2
 
 The reactions kinetics is parametrized by the Arrhenius formula (see the
-`equations math`_). The following snipped shows, that the reaction
+`equations math`_). The following snipped shows, that the reaction (id 99)
 
 .. raw:: html
 
     O + O(<sup>1</sup>S) → O + O
 
-has the rate coefficient of
+has the rate coefficient (in SI) of
 
 .. raw:: html
 
-    <i>k</i> = 2.5x10<sup>-17</sup> (<i>T</i><sub>n</sub>/300K)<sup>0</sup> exp(-300/<i>T</i><sub>n</sub>)
+    <i>k<sub>99</sub></i> = 2.5x10<sup>-17</sup> (<i>T</i><sub>n</sub>/300K)<sup>0</sup> exp(-300/<i>T</i><sub>n</sub>)<br>
+    <i>k<sub>99</sub></i> = 2.5x10<sup>-17</sup> exp(-300/<i>T</i><sub>n</sub>)
+
+.. code-block:: pycon
+
+    >>> argon_oxygen_chemistry.reactions_ids[98]
+    99
+    >>> argon_oxygen_chemistry.reactions_strings[98]
+    'O + O(1S) -> O + O'
+    >>> argon_oxygen_chemistry.reactions_arrh_a[98]
+    2.5e-17
+    >>> argon_oxygen_chemistry.reactions_arrh_b[98]
+    0
+    >>> argon_oxygen_chemistry.reactions_arrh_c[98]
+    300
+
+Several other properties of the reactions need to be given in the chemistry, such as
+electron energy losses, or the boolean array flagging all the elastic collisions, see the
+source code.
+
+Finally, the species and the reactions are related via the ``reactions_species_stoichiomatrix``
+and the ``reactions_electron_stoich`` parameters (one of each for left-hand and
+right-hand-sides of reactions). The following shows, that the first
+reaction has two electrons and He+ as reactants, and one electron and He* as products:
+
+.. code-block:: pycon
+
+    >>> argon_oxygen_chemistry.reactions_strings[0]
+    'e + e + He+ -> He* + e'
+    >>> argon_oxygen_chemistry.species_ids[1]
+    'He*'
+    >>> argon_oxygen_chemistry.species_ids[2]
+    'He+'
+
+    >>> # left-hand-side stoichiometries:
+    >>> argon_oxygen_chemistry.reactions_species_stoichiomatrix_lhs[0][2]
+    1
+    >>> argon_oxygen_chemistry.reactions_electron_stoich_lhs[0]
+    2
+
+    >>> # right-hand-side stoichiometries:
+    >>> argon_oxygen_chemistry.reactions_species_stoichiomatrix_rhs[0][1]
+    1
+    >>> argon_oxygen_chemistry.reactions_electron_stoich_rhs[0]
+    1
+
+
+As ever, reading through the source code will provide much more insight into the
+package than any documentation ever will. I have tried my best to keep all the docstrings
+as informative as possible and up-to-date.
+
+So dive in ...
 
 .. _example_chemistry: https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py
 .. _`equations math`: https://github.com/hanicinecm/pygmol/blob/master/docs/math.pdf
