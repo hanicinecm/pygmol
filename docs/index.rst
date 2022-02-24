@@ -50,7 +50,7 @@ The ``Model`` class takes two inputs:
   ``pygmol.abc.PlasmaParameters`` abstract base class.
 
 For the purpose of this demonstration, I have prepared an example argon_oxygen_chemistry_
-describing an :math:`Ar/O_2` plasma, as well as an example argon_oxygen_plasma_parameters_.
+describing an Argon/Oxygen plasma, as well as an example argon_oxygen_plasma_parameters_.
 
 Both inputs are based on Turner [1]_.
 Again, these are not part of the ``pygmol`` package, but rather only live for this
@@ -103,7 +103,10 @@ With that out of the way, let us instantiate our model:
 
     >>> from pygmol.model import Model
 
-    >>> model = Model(argon_oxygen_chemistry, argon_oxygen_params_dict)
+    >>> model = Model(
+    ...     chemistry=argon_oxygen_chemistry,
+    ...     plasma_params=argon_oxygen_params_dict
+    ... )
 
 and run it (hopefully with success):
 
@@ -117,6 +120,10 @@ and run it (hopefully with success):
 Note: If the solution is *not* successful, the ``ModelSolutionError`` will be raised and
 all the info returned by the ``scipy.integrate.solve_ivp`` will be stored under
 ``model.solution_raw``.
+
+
+Solution
+--------
 
 In the case of a successful solution, we can access it (in the final, post-processed
 form) as a ``pandas.DataFrame``, such as
@@ -139,6 +146,27 @@ form) as a ``pandas.DataFrame``, such as
        1.5e-02 2.4e+25 2.1e+15 8.6e+12 2.0e+13  ... 6.0e+16 1.7e+00 3.0e+02 1.0e+05 3.0e-01
     ...
 
+The columns of the solution dataframe are controlled by the ``Equations`` instance used
+by the ``Model``, see the `Equations <equations.rst>`_ documentation. For the native
+``ElectronEnergyEquations``
+(`source code <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/equations.py>`_)
+class, those are (apart time ``"t"``) the
+species names (``chemistry.species_ids``) for their densities in [SI], ``"e"`` for
+the electron density, and ``["T_e", "T_n", "p", "P"]`` for electron and neutral
+temperatures ([eV], and [K] respectively), pressure [Pa], and finally power [W].
+The neutral temperature is treated as a constant parameter by ``ElectronEnergyEquations``
+and stays therefore at it's initial value as defined by the ``plasma_parameters`` passed
+to ``Model``.
+
+A number of additional data extracted from a successful solution are provided by the
+``Model``:
+
+Reaction rates
+--------------
+Reaction rates in time (in [SI]) of all the reactions specified by the ``chemistry``,
+identified by their IDs as the dataframe columns (``chemistry.reactions_ids``).
+Index of the dataframe is irrelevant (and not printed out).
+
     >>> reaction_rates = model.get_reaction_rates()
     >>> print_dataframe(reaction_rates)
              t       1       2       3       4  ...     369     370     371     372     373
@@ -154,6 +182,10 @@ form) as a ``pandas.DataFrame``, such as
        1.5e-02 5.2e+06 1.1e+08 8.3e+15 1.4e+16  ... 3.7e+14 1.5e+15 5.7e+17 1.2e+16 1.5e+14
        1.5e-02 5.2e+06 1.1e+08 8.3e+15 1.4e+16  ... 3.7e+14 1.5e+15 5.7e+17 1.2e+16 1.5e+14
     ...
+
+Rates of change of species densities
+------------------------------------
+
 
     >>> rates_matrix = model.get_rates_matrix_total()
     >>> print_dataframe(rates_matrix, max_cols=6, hide_index=False)
