@@ -11,8 +11,9 @@ heavy species specified by the chemistry input, electron density, and electron
 temperature (while heavy-species temperature is treated as a parameter to the model).
 
 The equations being solved for by the model are documented in their full form in the
-equations_ document. This documentation covers the inner workings of the package, its
-structure, and adds some useful examples of usage.
+equations_ document.
+
+The following text describes their implementation as the ``pygmol`` package.
 
 
 Package structure:
@@ -50,7 +51,7 @@ The ``Model`` class takes two inputs:
   ``pygmol.abc.PlasmaParameters`` abstract base class.
 
 For the purpose of this demonstration, I have prepared an example argon_oxygen_chemistry_
-describing an Argon/Oxygen plasma, as well as an example argon_oxygen_plasma_parameters_.
+describing an Argon/Oxygen pulsed plasma, with the example argon_oxygen_plasma_parameters_.
 
 Both inputs are based on Turner [1]_.
 Again, these are not part of the ``pygmol`` package, but rather only live for this
@@ -163,7 +164,7 @@ A number of additional data extracted from a successful solution are provided by
 
 Reaction rates
 --------------
-Reaction rates in time (in [SI]) of all the reactions specified by the ``chemistry``,
+Reaction rates in time (in m-3/s) of all the reactions specified by the ``chemistry``,
 identified by their IDs as the dataframe columns (``chemistry.reactions_ids``).
 Index of the dataframe is irrelevant (and not printed out).
 
@@ -240,9 +241,9 @@ Rates of change of species densities
     ...
 
 
+.. _equations: https://github.com/hanicinecm/pygmol/blob/master/docs/equations.pdf
 .. _argon_oxygen_chemistry: https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py
 .. _argon_oxygen_plasma_parameters: https://github.com/hanicinecm/pygmol/blob/master/docs/example_plasma_parameters.py
-.. _equations: https://github.com/hanicinecm/pygmol/blob/master/docs/equations.pdf
 
 
 .. [1] Miles M Turner 2015 *Plasma Sources Sci. Technol.* **24** 035027
