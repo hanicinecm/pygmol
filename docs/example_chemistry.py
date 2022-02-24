@@ -2,25 +2,33 @@ from pygmol.abc import Chemistry
 
 
 class ArO2Chemistry(Chemistry):
+    # unique str ids of all the heavy species in the chemistry (excluding M and e-)
     species_ids = [
         "He", "He*", "He+", "He2*", "He2+",
         "O", "O(1D)", "O(1S)", "O+", "O-",
         "O2", "O2(a1Du)", "O2(a1Du; v)", "O2(b1Su+)", "O2(b1Su+; v)", "O2(v)", "O2+", "O2-",
         "O3", "O3(v)", "O3+", "O3-", "O4+", "O4-",
     ]
+    # heavy species charges in [e]
     species_charges = [
         0, 0, 1, 0, 1, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1
     ]
+    # heavy species masses in [amu]
     species_masses = [
         4.0, 4.0, 4.0, 8.01, 8.01, 16.0, 16.0, 16.0, 16.0, 16.0, 32.0, 32.0, 32.0, 32.0,
         32.0, 32.0, 32.0, 32.0, 48.0, 48.0, 48.0, 48.0, 64.0, 64.0]
+    # Lennard-Jones sigma parameters for all the heavy species in [A]
     species_lj_sigma_coefficients = [
         2.58, 2.58, 2.58, 2.58, 2.58, 3.05, 3.05, 3.05, 3.05, 3.05, 3.47, 3.47, 3.47,
         3.47, 3.47, 3.47, 3.47, 3.47, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0
         ]
+    # sticking probabilities for all the heavy species (values 0.0-1.0)
     species_surface_sticking_coefficients = [
         0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1
     ]
+    # return coefficients for stuck species. The i-th row and j-th column will give
+    # a "number" of i-th species returned to the plasma per a *single* j-th species
+    # *stuck* to the surface.
     species_surface_return_matrix = [
         [0, 1, 1, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -47,6 +55,7 @@ class ArO2Chemistry(Chemistry):
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ]
+    # unique int ids for all the reactions in the chemistry
     reactions_ids = [
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
         23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
@@ -71,6 +80,7 @@ class ArO2Chemistry(Chemistry):
         342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357,
         358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 371, 372, 373
     ]
+    # human-readable reaction strings for all the reactions
     reactions_strings = [
         "e + e + He+ -> He* + e",
         "e + e + He2+ -> He* + He + e",
@@ -446,6 +456,7 @@ class ArO2Chemistry(Chemistry):
         "He2+ + O3- -> He + He + O3",
         "He2+ + O4- -> He + He + O2 + O2"
     ]
+    # the Arrhenius pre-exponential factors in [SI]
     reactions_arrh_a = [
         1.74e-39, 1.62e-38, 2.5e-39, 2.5e-39, 7.77e-14, 4.45e-15, 3.3e-15, 2.51e-13,
         4.26e-19, 3.78e-13, 9.6e-17, 4.93e-15, 8.45e-15, 1.04e-15, 4.93e-15, 8.45e-15,
@@ -490,6 +501,7 @@ class ArO2Chemistry(Chemistry):
         2e-37, 1e-16, 9e-16, 2e-37, 2e-37, 1.2e-15, 1.2e-15, 2e-37, 3.26e-14, 1.6e-15,
         1.34e-13, 1.45e-13
     ]
+    # the Arrhenius exponent factors (unitless)
     reactions_arrh_b = [
         -4.5, -4.0, -2.5, -2.5, 0.02, 0.42, 0.33, -0.07, -0.63, -0.19, -0.5, 0.723,
         -0.306, -0.134, 0.723, 0.306, 0.723, -0.134, 0.178, 1.11, 0.99, 0.017, 1.5,
@@ -516,6 +528,8 @@ class ArO2Chemistry(Chemistry):
         0, 0, 0, 0, 0, 0, 0, 0, -1.1, -2.5, 0, 0, -2.5, -2.5, 0, 0, -2.5, -1.1, 0, -0.9,
         -0.9
     ]
+    # the Arrhenius "activation energy" factors in [eV] for electron collisions and in
+    # [K] for heavy species collisions.
     reactions_arrh_c = [
         0, 0, 0, 0, 0.5, 26.9, 21.6, 5.98, 0, 5.6, 0, 13.2, 3.13, 4.91, 11.64, 1.17,
         9.42, 0.73, 3.13, 19.84, 12.51, 8.05, 4.68, 0.016, 0.55, 0.586, 6.96, 6.6,
@@ -537,6 +551,9 @@ class ArO2Chemistry(Chemistry):
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     ]
+    # electron energy losses per a single collision in [eV]. Only defined for electron
+    # collisions, and negative for processes where electrons gain energy (such as
+    # super-elastic collisions)
     reactions_el_energy_losses = [
         0, 0, 0, 0, 0, 24.6, 19.8, 4.78, 0, 3.9, 0, 13.6, 1.96, 4.18, 11.65, -1.96,
         9.43, -4.18, 3.44, 18.73, 12.06, 8.5, 9.97, 0, 0.02, 0.19, 0.19, 0.57, 0.38,
@@ -557,6 +574,7 @@ class ArO2Chemistry(Chemistry):
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     ]
+    # boolean flags identifying the elastic collisions.
     reactions_elastic_flags = [
         0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -573,6 +591,8 @@ class ArO2Chemistry(Chemistry):
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     ]
+    # the matrix of left-hand-side stoichiometric coefficients for all the heavy-species
+    # and all the reactions. this attribute relates the species to the reactions.
     reactions_species_stoichiomatrix_lhs = [
         [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -948,6 +968,9 @@ class ArO2Chemistry(Chemistry):
         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
     ]
+    # the matrix of right-hand-side stoichiometric coefficients for all the
+    # heavy species and all the reactions. this attribute relates the species to the
+    # reactions:
     reactions_species_stoichiomatrix_rhs = [
         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -1323,6 +1346,7 @@ class ArO2Chemistry(Chemistry):
         [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
         [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     ]
+    # stoichiometric coefficients for electrons on left-hand-sides of all the reactions
     reactions_electron_stoich_lhs = [
         2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -1339,6 +1363,7 @@ class ArO2Chemistry(Chemistry):
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     ]
+    # stoichiometric coefficients for electrons on right-hand-sides of all the reactions
     reactions_electron_stoich_rhs = [
         1, 1, 0, 0, 1, 2, 1, 2, 0, 2, 0, 2, 1, 1, 2, 1, 2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
@@ -1355,6 +1380,10 @@ class ArO2Chemistry(Chemistry):
         0, 0, 0, 0, 2, 0, 2, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         1, 0, 2, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     ]
+    # stoichiometric coefficients for the arbitrary heavy species 'M' on
+    # right-hand and left-hand-sides of all the reactions. 'M' is supported by the model
+    # as any heavy species and is not resolved explicitly. this chemistry does not have
+    # any collisions with 'M', so zeros all over:
     reactions_arbitrary_stoich_lhs = len(reactions_ids) * [0]
     reactions_arbitrary_stoich_rhs = len(reactions_ids) * [0]
 
