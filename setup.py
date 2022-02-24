@@ -8,7 +8,7 @@ long_description = (root / "README.rst").read_text(encoding="utf-8")
 
 setup(
     name="pygmol",
-    version="1.1.0",
+    version="1.1.1",
     description="A plasma global model in python",
     long_description=long_description,
     long_description_content_type="text/x-rst",
@@ -41,7 +41,7 @@ setup(
     project_urls={
         "Bug Reports": "https://github.com/hanicinecm/pygmol/issues",
         "Documentation": (
-            "https://github.com/hanicinecm/pygmol/tree/master/docs/index.rst"
+            "https://github.com/hanicinecm/pygmol/tree/master/docs/doc_index.rst"
         ),
     },
 )

@@ -52,16 +52,20 @@ The ``pygmol`` package has 5 modules in total:
   the chemistry and plasma parameters data. Those are used under the hood of the
   global model class asserting the consistency of the input parameters passed to the model.
 
-- ``equations``: The ``equations``
+- ``equations``: The ``equations`` module
   (`source <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/equations.py>`_)
-  blah blah...
+  defines the native concrete subclass of the ``Equations`` abstraction:
+  ``ElectronEnergyEquations``. This class is used currently by the global model to
+  construct the ODE system resolving the state vector consisting of densities of all the
+  heavy species in the chemistry and the electron energy density. The
+  ``ElectronEnergyEquations`` is the implementation of the `equations math`_.
 
 - ``model``: The ``model`` module
   (`source <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/model.py>`_)
   is the main access point to the ``pygmol`` functionality, namely its ``Model`` class,
-  representing the global model. ``Model`` using the native ``ElectronEnergyEquations``
-  subclass of the ``Equations`` abstraction for constructing the ODE system based on the
-  chemistry and plasma parameters passed as arguments.
+  representing the global model. ``Model`` is currently using the native
+  ``ElectronEnergyEquations`` subclass of the ``Equations`` abstraction for constructing
+  the ODE system based on the chemistry and plasma parameters passed as arguments.
 
 The ``Chemistry``, ``PlasmaParameters`` and ``Equations`` abstractions and the native
 ``ElectronEnergyEquations`` class all deserve their own separate documentation pages:
@@ -70,7 +74,7 @@ The ``Chemistry``, ``PlasmaParameters`` and ``Equations`` abstractions and the n
 - `PlasmaParameters <doc_plasma_parameters.rst>`_
 - `Equations <doc_equations.rst>`_
 
-The rest of this documentation page will look at the ``Model`` class in greater detail.
+The rest of this documentation page will look at the ``Model`` class in some detail.
 
 
 The ``Model``:
