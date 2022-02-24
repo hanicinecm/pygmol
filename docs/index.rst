@@ -50,7 +50,7 @@ The ``Model`` class takes two inputs:
   ``pygmol.abc.PlasmaParameters`` abstract base class.
 
 For the purpose of this demonstration, I have prepared an example argon_oxygen_chemistry_
-describing an Ar/O2 plasma, as well as an example argon_oxygen_plasma_parameters_.
+describing an Ar-O:math:`_2` plasma, as well as an example argon_oxygen_plasma_parameters_.
 
 Both inputs are based on Turner [1]_.
 Again, these are not part of the ``pygmol`` package, but rather only live for this
@@ -85,13 +85,17 @@ they adhere to the exact interface defined by the abstract ``Chemistry`` and
 Both inputs to the ``Model`` class have their own documentation pages explaining them in
 detail: `Chemistry <chemistry.rst>`_, `PlasmaParameters <plasma_parameters.rst>`_.
 
-One note is in order: A fast glance at the argon_oxygen_chemistry_ makes very clear that
+One note is in order: Any fast glance at the argon_oxygen_chemistry_ makes it very clear that
 this is a *terrible* format for defining static chemistry data. Instead, the intention
 is that in real situation, the ``chemistry`` passed to the ``Model`` will be an instance
 of much more powerful class (coded responsibly by the user either inheriting from
 ``pygmol.abc.Chemistry`` or mirroring the interface exactly), which defines the
 attributes needed by the model as dynamic ``@properties``, rather than static class
-attributes as used in the example.
+attributes as used in the example. Such a user-defined class might hold instances of
+classes representing species and reactions, it might have some species or reactions-oriented
+*reduction* functionality built in, or it might be a class already in use in another modeling
+framework, or a class representing a ``django`` model in an online chemistry database, just
+augmented with the properties expected by ``pygmol``.
 
 With that out of the way, let us instantiate our model:
 
