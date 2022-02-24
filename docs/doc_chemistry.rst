@@ -2,7 +2,7 @@
 ``Chemistry`` Documentation
 ***************************
 
-The ``pygmol.abc.Chemistry`` defines the abstract base class (ABC) to be inherited from
+The ``pygmol.abc.Chemistry`` is the abstract base class (ABC) to be inherited from
 (or the interface mirrored by) by any *concrete* chemistry class instance needed as a
 parameter to the global model.
 
