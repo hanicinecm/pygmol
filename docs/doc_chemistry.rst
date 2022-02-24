@@ -104,7 +104,7 @@ and return to the system as two ``'He'`` neutrals:
     2
 
 The reactions kinetics is parametrized by the Arrhenius formula (see the
-`equations math`_). The following snipped shows, that the reaction (id 99)
+`equations math`_). The following snippet shows, that the reaction (id 99)
 
 .. raw:: html
 
@@ -134,7 +134,7 @@ Several other properties of the reactions need to be given in the chemistry, suc
 electron energy losses, or the boolean array flagging all the elastic collisions, see the
 source code.
 
-Finally, the species and the reactions are related via the ``reactions_species_stoichiomatrix``
+The species and the reactions are related via the ``reactions_species_stoichiomatrix``
 and the ``reactions_electron_stoich`` parameters (one of each for left-hand and
 right-hand-sides of reactions). The following shows, that the first
 reaction has two electrons and He+ as reactants, and one electron and He* as products:
@@ -159,6 +159,31 @@ reaction has two electrons and He+ as reactants, and one electron and He* as pro
     1
     >>> argon_oxygen_chemistry.reactions_electron_stoich_rhs[0]
     1
+
+
+Finally, the ``chemistry`` module also provides a function for validation of ``Chemistry``
+instances (this is used under the hood by the global model).
+
+    >>> from pygmol.chemistry import validate_chemistry
+    >>> validate_chemistry(chemistry=argon_oxygen_chemistry)
+
+This will raise an appropriate custom error if the attributes/properties of the
+``chemistry`` instance passed is inconsistent in some way, e.g. if length of the species
+attributes do not match:
+
+    >>> len(argon_oxygen_chemistry.species_ids)
+    24
+    >>> len(argon_oxygen_chemistry.species_charges)
+    24
+
+    >>> argon_oxygen_chemistry.species_charges = argon_oxygen_chemistry.species_charges[:-1]
+    >>> len(argon_oxygen_chemistry.species_charges)
+    23
+
+    >>> validate_chemistry(chemistry=argon_oxygen_chemistry)
+    Traceback (most recent call last):
+      ...
+    pygmol.chemistry.ChemistryValidationError: All the attributes describing species need to have the same dimension!
 
 
 As ever, reading through the source code will provide much more insight into the
