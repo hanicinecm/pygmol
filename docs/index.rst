@@ -24,7 +24,36 @@ The following text describes their implementation as the ``pygmol`` package.
 
 Package structure:
 ==================
-To be added...
+The ``pygmol`` package has 5 modules in total:
+
+- abc_: The ``abc`` module
+  defines all the abstractions used as dependencies in the package. The ``abc.Chemistry``
+  abstract base class (ABC) defines the interface ``pygmol`` expects from objects
+  describing chemistry. The ``abc.PlasmaParameters`` ABC defines the interface for the
+  plasma parameters input to the global model. And finally, the ``abc.Equations`` ABC
+  defines the interface for the *equations* class, which is needed by the global model
+  to construct the ODE system to be solved. Concrete subclasses of the ``Chemistry``,
+  ``PlasmaParameters`` and ``Equations`` abstractions are required by the global model.
+  Alternatively.
+
+- chemistry_, plasma_parameters_:
+  The package currently does not provide concrete subclasses of ``Chemistry`` and
+  ``PlasmaParameters`` abstractions, but ``chemistry`` and ``plasma_parameters`` modules
+  contain class factories
+  (or rather instance factories) returning instances of a purposefully built concrete
+  subclasses of the abstractions, ``ChemistryFromDict`` and ``PlasmaParametersFromDict``.
+  Those are instantiated with the ``dict`` parameters passed to the factories. This is
+  to support passing chemistry and plasma parameters as ``dict``s to the global model.
+  Apart from the class factories, both modules also contain functions for validation of
+  the chemistry and plasma parameters data. Those are used under the hood of the
+  global model class asserting the consistency of the input parameters passed to the model.
+
+- equations_: The ``equations`` module blah blah...
+
+- model_: This ``model`` module
+  is the main access point to the ``pygmol`` functionality, namely its ``Model`` class,
+  representing the global model. The rest of this documentation page will look at the
+  ``Model`` in greater detail.
 
 
 The ``Model``:
@@ -33,7 +62,8 @@ This section shows the basic example of usage of the ``model.Model`` class for m
 plasma chemistry.
 
 Firstly, some maintenance is in order, to help with doc-testing the following code
-snippets. This following code block is not normally necessary:
+snippets. This following code block will not be necessary for using ``pygmol``, but is
+necessary for running and testing the code in this documentation:
 
 .. code-block:: pycon
 
@@ -51,13 +81,14 @@ snippets. This following code block is not normally necessary:
 The ``Model`` class takes two inputs:
 
 - ``chemistry`` - an instance of any concrete subclass of the ``pygmol.abc.Chemistry``
-  abstract base class
+  abstract base class,
 
 - ``plasma_parameters`` - an instance of any concrete subclass of the
   ``pygmol.abc.PlasmaParameters`` abstract base class.
 
-For the purpose of this demonstration, I have prepared an example argon_oxygen_chemistry_
-describing an Argon/Oxygen pulsed plasma, with the example argon_oxygen_plasma_parameters_.
+For the purpose of this demonstration, I have prepared an example_chemistry_
+describing an Argon/Oxygen pulsed plasma, and the example example_plasma_parameters_ for
+this modeling case.
 
 Both inputs are based on Turner [1]_.
 Again, these are not part of the ``pygmol`` package, but rather only live for this
@@ -92,7 +123,7 @@ they adhere to the exact interface defined by the abstract ``Chemistry`` and
 Both inputs to the ``Model`` class have their own documentation pages explaining them in
 detail: `Chemistry <chemistry.rst>`_, `PlasmaParameters <plasma_parameters.rst>`_.
 
-One note is in order: Any fast glance at the argon_oxygen_chemistry_ makes it very clear that
+One note is in order: Any fast glance at the argon_oxygen_chemistry_ example makes it very clear that
 this is a *terrible* format for defining static chemistry data. Instead, the intention
 is that in real situation, the ``chemistry`` passed to the ``Model`` will be an instance
 of much more powerful class (coded responsibly by the user either inheriting from
@@ -248,6 +279,8 @@ Finally, a general diagnostics method is provided, returning the time dependence
 intermediate result defined by the concrete ``Equations`` class used by the model.
 For example, the *Debye length* can be requested in time by
 
+.. code-block:: pycon
+
     >>> debye_length = model.diagnose("debye_length")
     >>> print_dataframe(debye_length)
              t  debye_length
@@ -264,26 +297,34 @@ For example, the *Debye length* can be requested in time by
        1.5e-02       3.9e-05
     ...
 
-assuming that ``model.equations`` has the ``get_debye_length`` method accepting the
-state vector *y* (see `Equations <equations.rst>`_).
+assuming that ``model.equations`` has the ``get_debye_length`` getter method, which
+accepts the state vector *y* (see `Equations <equations.rst>`_).
 
 Other functionality
 -------------------
 The examples above only cover the selected functionality of the ``Model``. Other
 useful methods might include
 
-- ``get_surface_loss_rates``, ``get_rates_matrix_volume``, ``get_rates_matrix_surface``,
-  ``get_{*}_final``.
+- ``get_surface_loss_rates``,
+- ``get_rates_matrix_volume``,
+- ``get_rates_matrix_surface``,
+- ``get_{*}_final``.
 
 And, of course, reading through the source code will provide much more insight into the
-package than any documentation ever will.
+package than any documentation ever will. I have tried my best to keep all the docstrings
+as informative as possible and up-to-date.
 
 So dive in ...
 
 
 .. _`equations math`: https://github.com/hanicinecm/pygmol/blob/master/docs/math.pdf
-.. _argon_oxygen_chemistry: https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py
-.. _argon_oxygen_plasma_parameters: https://github.com/hanicinecm/pygmol/blob/master/docs/example_plasma_parameters.py
+.. _abc: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/abc.py>
+.. _chemistry: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/chemistry.py>
+.. _plasma_parameters: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/plasma_parameters.py>
+.. _equations: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/equations.py>
+.. _model: https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/model.py>
+.. _example_chemistry: https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py
+.. _example_plasma_parameters: https://github.com/hanicinecm/pygmol/blob/master/docs/example_plasma_parameters.py
 
 
 .. [1] Miles M Turner 2015 *Plasma Sources Sci. Technol.* **24** 035027
