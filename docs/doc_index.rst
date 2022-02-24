@@ -47,7 +47,7 @@ The ``pygmol`` package has 5 modules in total:
   (or rather instance factories) returning instances of a purposefully built concrete
   subclasses of the abstractions, ``ChemistryFromDict`` and ``PlasmaParametersFromDict``.
   Those are instantiated with the ``dict`` parameters passed to the factories. This is
-  to support passing chemistry and plasma parameters as ``dict``s to the global model.
+  to support passing chemistry and plasma parameters as dictionaries to the global model.
   Apart from the class factories, both modules also contain functions for validation of
   the chemistry and plasma parameters data. Those are used under the hood of the
   global model class asserting the consistency of the input parameters passed to the model.
@@ -63,8 +63,8 @@ The ``pygmol`` package has 5 modules in total:
   subclass of the ``Equations`` abstraction for constructing the ODE system based on the
   chemistry and plasma parameters passed as arguments.
 
-The ``Chemistry``, ``PlasmaParameters`` and ``Equations`` abstractions deserve their own
-separate documentation pages:
+The ``Chemistry``, ``PlasmaParameters`` and ``Equations`` abstractions and the native
+``ElectronEnergyEquations`` class all deserve their own separate documentation pages:
 
 - `Chemistry <doc_chemistry.rst>`_
 - `PlasmaParameters <doc_plasma_parameters.rst>`_
