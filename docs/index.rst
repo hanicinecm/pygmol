@@ -38,7 +38,7 @@ snippets. This following code block is not normally necessary:
     >>> sys.path.append(str(Path(".") / "docs"))
     >>> # I have prepared a function which prints pandas.DataFrames (object of choice
     >>> # for the model outputs) in a controlled way. This helps with doc-testing:
-    >>> from utils import print_table
+    >>> from utils import print_dataframe
 
 
 The ``Model`` class takes two inputs:
@@ -84,13 +84,14 @@ they adhere to the exact interface defined by the abstract ``Chemistry`` and
 
 Both inputs to the ``Model`` class have their own documentation pages explaining them in
 detail: `Chemistry <chemistry.rst>`_, `PlasmaParameters <plasma_parameters.rst>`_.
+
 One note is in order: A fast glance at the argon_oxygen_chemistry_ makes very clear that
 this is a *terrible* format for defining static chemistry data. Instead, the intention
 is that in real situation, the ``chemistry`` passed to the ``Model`` will be an instance
 of much more powerful class (coded responsibly by the user either inheriting from
-``pygmol.abc.Chemistry`` or mirroring the interface exactly), which defines the abstract
-attributes needed as dynamic ``@properties``, rather than class attributes as used in
-the example.
+``pygmol.abc.Chemistry`` or mirroring the interface exactly), which defines the
+attributes needed by the model as dynamic ``@properties``, rather than static class
+attributes as used in the example.
 
 With that out of the way, let us instantiate our model:
 
@@ -100,7 +101,7 @@ With that out of the way, let us instantiate our model:
 
     >>> model = Model(argon_oxygen_chemistry, argon_oxygen_params_dict)
 
-and run it (and see if the solver was successful):
+and run it (hopefully with success):
 
 .. code-block:: pycon
 
@@ -112,13 +113,14 @@ and run it (and see if the solver was successful):
 Note: If the solution is *not* successful, the ``ModelSolutionError`` will be raised and
 all the info returned by the ``scipy.integrate.solve_ivp`` will be stored under
 ``model.solution_raw``.
-In the case of a successful solution, we can access it in the ``pandas.DataFrame`` form
-such as
+
+In the case of a successful solution, we can access it (in the final, post-processed
+form) as a ``pandas.DataFrame``, such as
 
 .. code-block:: pycon
 
     >>> solution = model.get_solution()
-    >>> print_table(solution)
+    >>> print_dataframe(solution)
              t      He     He*     He+    He2*  ...       e     T_e     T_n       p       P
        0.0e+00 2.4e+25 2.4e+10 2.0e+10 2.4e+10  ... 2.4e+10 1.0e+00 3.0e+02 1.0e+05 3.0e-01
        2.9e-15 2.4e+25 2.4e+10 2.0e+10 2.4e+10  ... 2.4e+10 6.0e+00 3.0e+02 1.0e+05 3.0e-01
@@ -134,7 +136,7 @@ such as
     ...
 
     >>> reaction_rates = model.get_reaction_rates()
-    >>> print_table(reaction_rates)
+    >>> print_dataframe(reaction_rates)
              t       1       2       3       4  ...     369     370     371     372     373
        0.0e+00 1.9e-08 1.8e-07 2.8e+07 2.8e+07  ... 2.1e+06 1.5e+07 7.5e+05 6.2e+07 6.7e+07
        2.9e-15 6.1e-12 1.4e-10 3.2e+05 3.2e+05  ... 2.1e+06 1.5e+07 7.5e+05 6.2e+07 6.7e+07
@@ -150,7 +152,7 @@ such as
     ...
 
     >>> rates_matrix = model.get_rates_matrix_total()
-    >>> print_table(rates_matrix, max_cols=6, hide_index=False)
+    >>> print_dataframe(rates_matrix, max_cols=6, hide_index=False)
                                               He     He*     He+  ...     O3-     O4+     O4-
     He + O2(v) -> He + O2 (R272)         0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
     O(1D) + O2 -> O + O2(b1Su+) (R112)   0.0e+00 0.0e+00 0.0e+00  ... 0.0e+00 0.0e+00 0.0e+00
@@ -167,7 +169,7 @@ such as
 
     >>> selected = rates_matrix[["O", "O2(a1Du)", "O3"]]
     >>> selected = selected.loc[(selected!=0).any(axis=1)]
-    >>> print_table(selected, hide_index=False)
+    >>> print_dataframe(selected, hide_index=False)
                                                O  O2(a1Du)       O3
     O(1D) + O2 -> O + O2(b1Su+) (R112)   3.8e+23   0.0e+00  0.0e+00
     O2(b1Su+) + O3 -> O + O2 + O2 (R137) 2.4e+23   0.0e+00 -2.4e+23
@@ -183,7 +185,7 @@ such as
     ...
 
     >>> debye_length = model.diagnose("debye_length")
-    >>> print_table(debye_length)
+    >>> print_dataframe(debye_length)
              t  debye_length
        0.0e+00       4.8e-02
        2.9e-15       1.2e-01
@@ -199,7 +201,7 @@ such as
     ...
 
 
-.. _argon_oxygen_chemistry: https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py>
+.. _argon_oxygen_chemistry: https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py
 .. _argon_oxygen_plasma_parameters: https://github.com/hanicinecm/pygmol/blob/master/docs/example_plasma_parameters.py
 .. _equations: https://github.com/hanicinecm/pygmol/blob/master/docs/equations.pdf
 

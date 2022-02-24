@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def print_table(df: pd.DataFrame, max_cols: int = 10, hide_index: bool = True):
+def print_dataframe(df: pd.DataFrame, max_cols: int = 10, hide_index: bool = True):
     """Prints passed pandas dataframe in a controlled way with some sensible formatting,
     maximum number of columns, and, if needed, without the index.
 

@@ -65,13 +65,14 @@ installed into the virtual environment in the editable mode by running
 The ``[dev]`` extra installs (apart from the package dependencies) also several
 development-related packages, such as ``pytest``, ``coverage``, ``ipython``, or
 ``black``.
-The unit tests and run tests can then be executed by running (from the project root
-directory)
+The unit tests can then be executed, as well as the suite of run tests and documentation
+tests, by running (from the project root directory)
 
 .. code-block:: bash
 
-    pytest --cov
+    pytest [--cov]
     pytest run_tests
+    pytest docs
 
 respectively.
 
