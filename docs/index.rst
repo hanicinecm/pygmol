@@ -241,7 +241,7 @@ Rates of change of species densities
     ...
 
 
-.. _equations: https://github.com/hanicinecm/pygmol/blob/master/docs/equations.pdf
+.. _equations: https://github.com/hanicinecm/pygmol/blob/master/docs/math.pdf
 .. _argon_oxygen_chemistry: https://github.com/hanicinecm/pygmol/blob/master/docs/example_chemistry.py
 .. _argon_oxygen_plasma_parameters: https://github.com/hanicinecm/pygmol/blob/master/docs/example_plasma_parameters.py
 

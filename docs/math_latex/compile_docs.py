@@ -41,4 +41,4 @@ for file_path in file_dir.glob(f"{doc_name}*.*"):
         file_path.unlink()
 
 # move the final pdf one folder up and rename:
-file_dir.joinpath(f"{doc_name}.pdf").rename(docs_dir.joinpath("equations.pdf"))
+file_dir.joinpath(f"{doc_name}.pdf").rename(docs_dir.joinpath("math.pdf"))
