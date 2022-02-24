@@ -50,7 +50,7 @@ The ``Model`` class takes two inputs:
   ``pygmol.abc.PlasmaParameters`` abstract base class.
 
 For the purpose of this demonstration, I have prepared an example argon_oxygen_chemistry_
-describing an Ar-O:math:`_2` plasma, as well as an example argon_oxygen_plasma_parameters_.
+describing an :math:`Ar/O_2` plasma, as well as an example argon_oxygen_plasma_parameters_.
 
 Both inputs are based on Turner [1]_.
 Again, these are not part of the ``pygmol`` package, but rather only live for this
