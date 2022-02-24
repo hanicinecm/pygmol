@@ -84,9 +84,13 @@ testing process another layer of usefulness.
 Docstrings in the project adhere to the numpydoc_ styling.
 The project code is formatted by ``black``.
 
+Finally, this to-do-list_ compiles some ideas on what could be next implemented to improve
+the model and the ``pygmol`` package.
+
 
 .. _equations: https://github.com/hanicinecm/pygmol/blob/master/docs/math.pdf
 .. _documentation: https://github.com/hanicinecm/pygmol/tree/master/docs/doc_index.rst
 .. _GitHub: https://github.com/hanicinecm/pygmol
 .. _PyPI: https://pypi.org/project/pygmol/
 .. _numpydoc: https://numpydoc.readthedocs.io/en/latest/format.html
+.. _to-do-list: https://github.com/hanicinecm/pygmol/tree/master/docs/doc_todo.rst

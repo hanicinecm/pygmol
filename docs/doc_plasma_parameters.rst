@@ -10,7 +10,7 @@ The best way to introduce the plasma parameters interface is to read the
 of the abstraction itself, or to see the annotated example_plasma_parameters_ for
 a pulsed micro-jet plasma in Argon/Oxygen mixture, based on Turner [1]_.
 
-One thing needs to be mention in front: It would be very impractical for each model run
+One thing should be mention up front: It would be very impractical for each model run
 to *actually* define a new concrete subclass of the ``PlasmaParameters`` ABC and passing
 its instance into global model. Instead, a simple ``dict`` can be used mirroring exactly
 the ABC's interface. The ``PlasmaParameters`` abstraction is there mostly to formally
@@ -22,7 +22,7 @@ interface.
 
 That said, subclasses of ``abc.PlasmaParameters``, or any other objects defining the same
 interface (such as an appropriate ``dataclass`` or ``namedtuple``), can easily be used
-as global model input
+as inputs for the global model.
 
 With that in mind, let us jump to some examples.
 
@@ -125,7 +125,7 @@ not adhering to the interface required:
       ..
     TypeError: Can't instantiate abstract class PlasmaParametersFromDict with abstract methods length
 
-or inconsistent with the passed chemistry:
+or inconsistent with the chemistry:
 
 .. code-block:: pycon
 
