@@ -151,7 +151,9 @@ Let us now see, how the ``equations`` object is used behind the scenes of the ``
     >>> # the scipy solver uses this function to get the time derivative of the state
     >>> # vector based on itself and the time t. this function is NEVER called by pygmol,
     >>> # only by the low-lever scipy solver.
-    >>> for val in dy_over_dt = ode_rhs(t=0.015, y=y):
+    >>> dy_over_dt = ode_rhs(t=0.015, y=y)
+
+    >>> for val in dy_over_dt:
     ...     print(f"{val:.1e}")
     -9.8e+22
     -3.9e+16
