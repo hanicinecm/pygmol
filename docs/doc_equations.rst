@@ -67,3 +67,106 @@ concrete ``Equations`` class.
 
 A short demonstration should make everything clear.
 
+Firstly, some maintenance is in order, to help with doc-testing the following code
+snippets:
+
+.. code-block:: pycon
+
+    >>> import sys
+    >>> from pathlib import Path
+    >>> from numpy import array
+
+    >>> # I will be importing some example chemistry and plasma parameters objects
+    >>> # from the documentation directory (not part of the package), so it goes to the
+    >>> # system path:
+    >>> sys.path.append(str(Path(".") / "docs"))
+
+Now, let us instantiate the ``Model`` with the same example chemistry and plasma
+parameters as used int the `Model <doc_index.rst>`_ documentation:
+
+.. code-block:: pycon
+
+    >>> from pygmol.model import Model
+    >>> from example_chemistry import argon_oxygen_chemistry
+    >>> from example_plasma_parameters import argon_oxygen_plasma_parameters
+
+    >>> model = Model(argon_oxygen_chemistry, argon_oxygen_plasma_parameters)
+
+The ``ElectronEnergyEquations`` is instantiated as the ``equations`` attribute to the
+model, wherever the ``run`` method is called:
+
+.. code-block:: pycon
+
+    >>> model.run()
+
+    >>> type(model.equations)
+    <class 'pygmol.equations.ElectronEnergyEquations'>
+
+After a successful ``Model`` run, all the state vectors *y(t)* are stored as
+the ``solution_primary`` attribute ``numpy.ndarray``, in this case with several
+thousand rows (each for a single time step) and 25 columns (for densities of 24
+heavy species and the electron energy density):
+
+.. code-block:: pycon
+
+    >>> type(model.solution_primary)
+    <class 'numpy.ndarray'>
+
+    >>> model.solution_primary.shape[1]
+    25
+
+Let us see, how the ``equations`` object work:
+
+.. code-block:: pycon
+
+    >>> equations = model.equations
+
+    >>> # the final (last) state vector:
+    >>> y = array([2.37231337e+25, 2.10846582e+15, 8.57126911e+12, 2.01183854e+13,
+    ...            1.45857406e+13, 1.71508621e+21, 5.65338119e+17, 3.08500654e+16,
+    ...            2.23303476e+15, 3.00187971e+16, 2.12734223e+22, 9.12458352e+20,
+    ...            6.28684944e+13, 6.42392705e+20, 1.44619515e+15, 1.75817604e+15,
+    ...            8.73664736e+16, 3.17005006e+15, 2.45284068e+19, 1.16724944e+17,
+    ...            2.02079492e+11, 6.20627690e+15, 9.37287931e+15, 6.95883253e+13,
+    ...            1.49559385e+17])
+
+    >>> # the time derivative of the final state vector, based on itself and the final
+    >>> # time t = 0.015 s
+    >>> ode_rhs = equations.ode_system_rhs
+    >>> dy_over_dt = ode_rhs(t=0.015, y=y)  # this is the bit used by the solver
+    >>> for val in dy_over_dt:
+    ...     print(f"{val:.1e}")
+    -9.8e+22
+    -3.9e+16
+    -3.9e+14
+    ...
+    -5.7e+17
+    -8.1e+15
+    2.4e+17
+
+    >>> # this is how the state vector in each time step gets converted to the final solution:
+    >>> for quantity in equations.final_solution_labels:
+    ...     print(quantity)
+    He
+    He*
+    ...
+    O4+
+    O4-
+    e
+    T_e
+    T_n
+    p
+    P
+
+    >>> for quantity_value in equations.get_final_solution_values(t=0.015, y=y):
+    ...     print(f"{quantity_value:.1e}")
+    2.4e+25
+    2.1e+15
+    ...
+    9.4e+15
+    7.0e+13
+    6.0e+16
+    1.7e+00
+    3.0e+02
+    1.0e+05
+    3.0e-01
