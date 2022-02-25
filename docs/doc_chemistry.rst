@@ -3,7 +3,7 @@
 ***************************
 
 The ``pygmol.abc.Chemistry`` is the abstract base class (ABC) to be inherited from
-(or the interface mirrored by) by any *concrete* chemistry class instance needed as a
+(or the interface mirrored) by any *concrete* chemistry class instance needed as a
 parameter to the global model.
 
 The best way into understanding the interface expected by the global model is to read

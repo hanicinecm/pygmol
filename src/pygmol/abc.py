@@ -332,7 +332,7 @@ class Equations(ABC):
     # noinspection PyUnresolvedReferences
     """Abstract base class (ABC) representing the system of ODEs.
 
-    The `GlobalModel` (as the highest-level class of the `pygmol` package) solves an
+    The `Model` (as the highest-level class of the `pygmol` package) solves an
     initial value problem for a system of ordinary differential equations. The system
     being solved (in general) is::
 
