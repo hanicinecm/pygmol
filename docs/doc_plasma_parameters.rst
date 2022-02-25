@@ -55,6 +55,14 @@ example_plasma_parameters_:
 Most of the parameters are self explanatory. The dimensions refer to an ICP plasma of
 cylindrical shape.
 
+The pressure parameter serves not only as the initial value (normalising the initial
+densities), but also as the pressure *set-point*. The ODE system describing the plasma
+behaviour includes a pressure correction term, compensating for species surface losses
+or species number densities' changes due to dissociative and recombination processes
+and the incoming feed flows. This pressure correction has a physical analogy in the
+regulating gate valve to a pump which will be in use in almost any plasma processing
+reactor.
+
 The power absorbed by the plasma can be in general time dependent and
 is defined as a series of points ``[t_power[i], power[i]]``. The example above shows
 three pulses of 0.3 W, each 3 microseconds wide, followed by 3 microseconds of no power.

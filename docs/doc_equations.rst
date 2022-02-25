@@ -71,6 +71,16 @@ solver on a lower level. On a higher level, those are then converted to the valu
 of the ``final_solution_labels`` by the ``get_final_solution_values`` method of the
 concrete ``Equations`` class.
 
+The neutral temperature is not resolved by the model using ``ElectronEnergyEquations``,
+but rather treated as a parameters. The final solution given by the
+``ElectronEnergyEquations`` does include the neutral temperature (``T_n`` is in
+``ElectronEnergyEquations().final_solution_labels``), but it's value is kept at the
+initial value specified by the plasma parameters input.
+
+The number density of electrons is also not resolved by the state vector *y*,
+nevertheless the electron density does appear in the final solution, simply calculated
+to preserve the charge neutrality of the plasma.
+
 A short demonstration should make everything clear.
 
 Firstly, some maintenance is in order, to help with doc-testing the following code
@@ -185,9 +195,45 @@ solution values (this happens under the hood of the ``Model.run`` method):
     1.0e+05
     3.0e-01
 
+The last five values (in accordance to the ``equations.final_solution_labels``) denote
+the electron density of 6.0e16 m-3, electron temperature of around 1.7 eV, atmospheric
+pressure, and the instantaneous power of 0.3 W.
+
 
 For developers
 ==============
 
 As stated above, this documentation page is mainly aimed at future developers of the
 pygmol package, including my future self.
+
+Any future expansion of the global model physics should go via a new concrete
+subclass of the ``Equations`` abstraction, or via expansion, or sub-classing the
+existing ``ElectronEnergyEquations`` class.
+
+Two different directions of adding some new physics to the ``Model.equations`` come
+to mind:
+
+- Equations supporting modeling the neutral densities *only*, cutting the electron
+  energy density out of the state vector. This could be handy for simple chemical modeling
+  without any ionization.
+
+- Equations which also resolve the neutral energy density as another value in the state
+  vector. As a result, the neutral temperature would be truly resolved by the model,
+  starting from the initial guess supplied by the plasma parameters input.
+  **Note**: this would most likely require not only a new ``Equations`` implementation
+  (``NeutralEnergyEquations`` if you will), but also some careful augmentation of the
+  ``Chemistry`` abstraction, to supply the new chemistry data needed to resolve the
+  neutral energy, such as enthalpies of creation, thermodynamic properties of the species
+  etc. A careful consideration would be in order to decide if a separate ``ThermalChemistry``
+  ABC should be implemented for this case, or if the current ``Chemistry`` abstraction
+  should be augmented to provide these data upon request, but without the need to
+  implement these data if used with the simpler ``ElectronEnergyEquations`` instance.
+
+In any case of changing the underlying math of the ODE being solved for, all the abstract
+methods and properties of the new subclass of the ``Chemistry`` abstraction will need to
+be re-implemented. See the source code to the ``pygmol.abc`` module and it's docstrings.
+
+Finally, if multiple interchangeable ``Equations`` *backends* are provided by the
+``pygmol`` package, it would make perfect sense to let users choose between those
+upon ``Model`` instantiation. Currently, as ``ElectronEnergyEquations`` is the only
+one provided, it is simply hard-coded to the ``Model`` class.
