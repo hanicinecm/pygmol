@@ -29,9 +29,20 @@ given an initial value::
 
     y(t0) = y0.
 
-Here, ``t`` is an independent time variable and ``y(t)`` is an N-D vector-values function
+Here, ``t`` is an independent time variable and ``y(t)`` is an N-D vector-valued function
 describing the *state vector y* as a function of time.
 
-The ``solve_ivp`` expects (apart the initial value of the state vector) the
+The ``solve_ivp`` expects (apart from the initial value of the state vector) the
 right-hand-side of the ODE system, ``f(t, y)`` in the form of a vector-valued function.
 The function signature must be ``f(t: float, y: n-d array) -> n-d array``.
+The main responsibility of any concrete ``Equations`` subclass is to provide this
+function for the solver. The is given by the ``Equations.ode_system_rhs`` attribute.
+This will typically be a dynamically build ``@property`` constructed based on the
+`Chemistry <doc_chemistry.rst>`_ and  `PlasmaParameters <doc_plasma_parameters.rst>`_
+instances passed to the ``Model`` (and further on to ``Equations``).
+
+Other abstract methods and properties are defined by the ``Equations`` abstractions,
+which need to be overridden by a concrete subclass, such as ``final_solution_labels``,
+``get_final_solution_values``, and ``get_y0_default`` (see the
+`source code <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/abc.py>`_
+for further information).
