@@ -41,8 +41,29 @@ This will typically be a dynamically build ``@property`` constructed based on th
 `Chemistry <doc_chemistry.rst>`_ and  `PlasmaParameters <doc_plasma_parameters.rst>`_
 instances passed to the ``Model`` (and further on to ``Equations``).
 
-Other abstract methods and properties are defined by the ``Equations`` abstractions,
+Other abstract methods and properties are defined by the ``Equations`` abstraction,
 which need to be overridden by a concrete subclass, such as ``final_solution_labels``,
 ``get_final_solution_values``, and ``get_y0_default`` (see the
 `source code <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/abc.py>`_
 for further information).
+
+
+``ElectronEnergyEquations``
+===========================
+
+As mentioned above, ``pygmol`` provides a concrete ``Equations`` subclass, currently
+used by the global model, the ``ElectronEnergyEquations`` inside the ``equations``
+module
+(`source <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/equations.py>`_).
+
+This equations class resolves densities of all the heavy species in the chemistry (which
+is kind of *given* for any global model of plasma chemistry), as well as the
+*electron energy density* (hence the class name). It's ``ode_system_rhs`` works on the
+state vector which is ``[n_1, n_2, ..., n_N, rho_e]`` (where ``N`` is the number of
+heavy species in the ``chemistry``). Those are the quantities which are resolved by the
+solver on a lower level. On a higher level, those are then converted to the values
+of the ``final_solution_labels`` by the ``get_final_solution_values`` method of the
+concrete ``Equations`` class.
+
+A short demonstration should make everything clear.
+
