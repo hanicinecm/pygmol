@@ -115,7 +115,7 @@ heavy species and the electron energy density):
     >>> model.solution_primary.shape[1]
     25
 
-Let us see, how the ``equations`` object work:
+Let us now see, how the ``equations`` object works:
 
 .. code-block:: pycon
 
@@ -134,6 +134,7 @@ Let us see, how the ``equations`` object work:
     >>> # time t = 0.015 s
     >>> ode_rhs = equations.ode_system_rhs
     >>> dy_over_dt = ode_rhs(t=0.015, y=y)  # this is the bit used by the solver
+
     >>> for val in dy_over_dt:
     ...     print(f"{val:.1e}")
     -9.8e+22
@@ -144,7 +145,12 @@ Let us see, how the ``equations`` object work:
     -8.1e+15
     2.4e+17
 
-    >>> # this is how the state vector in each time step gets converted to the final solution:
+
+Finally, this is how the state vector *y* for each time step gets converted to the final
+solution values (this happens under the hood of the ``Model.run`` method):
+
+.. code-block:: pycon
+
     >>> for quantity in equations.final_solution_labels:
     ...     print(quantity)
     He
