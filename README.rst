@@ -84,8 +84,8 @@ testing process another layer of usefulness.
 Docstrings in the project adhere to the numpydoc_ styling.
 The project code is formatted by ``black``.
 
-For anyone interesting in further development of ``pygmol``, this is where one might
-start.
+For anyone interesting in further development of ``pygmol``,
+`this <doc_equations.rst#for-developers>`_ is where one might start.
 
 .. _equations: https://github.com/hanicinecm/pygmol/blob/master/docs/math.pdf
 .. _documentation: https://github.com/hanicinecm/pygmol/tree/master/docs/doc_index.rst
