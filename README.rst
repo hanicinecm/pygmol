@@ -1,9 +1,9 @@
 |Tests action| |Run tests action| |Unit-test coverage| |GitHub license| |PyPI version| |PyPI pyversions| |Code style|
 
 .. |Tests action| image:: https://github.com/hanicinecm/pygmol/workflows/unit-tests/badge.svg
-   :target: https://github.com/hanicinecm/pygmol/actions
+   :target: https://github.com/hanicinecm/pygmol/actions/workflows/unit-tests.yml
 .. |Run tests action| image:: https://github.com/hanicinecm/pygmol/workflows/run-tests/badge.svg
-   :target: https://github.com/hanicinecm/pygmol/actions
+   :target: https://github.com/hanicinecm/pygmol/actions/workflows/run-tests.yml
 .. |Unit-test coverage| image:: https://codecov.io/gh/hanicinecm/pygmol/branch/master/graph/badge.svg?token=TNKBDTVGFV
    :target: https://codecov.io/gh/hanicinecm/pygmol
 .. |GitHub license| image:: https://img.shields.io/github/license/hanicinecm/pygmol.svg
