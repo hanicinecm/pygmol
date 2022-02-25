@@ -88,6 +88,12 @@ For anyone interesting in further development of ``pygmol``,
 `this <https://github.com/hanicinecm/pygmol/blob/master/docs/doc_equations.rst#for-developers>`_
 is where one might start.
 
+**A note on version numbering**: Following the *major.minor.micro* versioning convention,
+the *minor* version should be increased, if the document describing the maths behind
+the equations_ requires an update. The *micro* version increases are reserved for any
+other non-breaking changes, such as documentation updates, some minor api tweaks, etc.
+And the *major* version? You tell me, I have no plan as where to go with it...
+
 .. _equations: https://github.com/hanicinecm/pygmol/blob/master/docs/math.pdf
 .. _documentation: https://github.com/hanicinecm/pygmol/tree/master/docs/doc_index.rst
 .. _GitHub: https://github.com/hanicinecm/pygmol
