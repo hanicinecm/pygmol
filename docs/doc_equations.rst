@@ -2,6 +2,12 @@
 ``Equations`` Documentation
 ***************************
 
+**Initial note**: Everything discussed in this documentation page is
+*effectively hidden* to any ``pygmol`` user, as it is happening under the hood of
+the global model. But as the ``Equations`` class forms a heart of the model, any future
+improvements of the model will need to go through the equations. Therefore this short
+introduction might benefit my future self, or any future developers of the package.
+
 The ``pygmol.abc.Equations`` is the abstract base class (ABC) to be inherited from
 (or the interface mirrored) by *concrete* equations class used by the
 global ``pygmol.model.Model``.
@@ -115,7 +121,7 @@ heavy species and the electron energy density):
     >>> model.solution_primary.shape[1]
     25
 
-Let us now see, how the ``equations`` object works:
+Let us now see, how the ``equations`` object is used behind the scenes of the ``Model``:
 
 .. code-block:: pycon
 
@@ -136,6 +142,7 @@ Let us now see, how the ``equations`` object works:
     >>> dy_over_dt = ode_rhs(t=0.015, y=y)  # this is the bit used by the solver
 
     >>> for val in dy_over_dt:
+    >>>     # this function is never called except by the `scipy.integrate.solve_ivp`
     ...     print(f"{val:.1e}")
     -9.8e+22
     -3.9e+16
@@ -176,3 +183,10 @@ solution values (this happens under the hood of the ``Model.run`` method):
     3.0e+02
     1.0e+05
     3.0e-01
+
+
+For developers
+==============
+
+As stated above, this documentation page is mainly aimed at future developers of the
+pygmol package, including my future self.
