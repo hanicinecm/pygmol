@@ -6,6 +6,7 @@ from typing import Union, Mapping
 
 import numpy as np
 import pandas
+import pandas as pd
 from numpy import ndarray
 from scipy.integrate import solve_ivp
 
@@ -157,22 +158,21 @@ class Model:
         ------
         ModelSolutionError
             If the `solution_raw` is None (not populated yet).
-
-        TODO: This is way too slow, should take around 0.01 s instead of 0.44 s for
-              the test case!
         """
         if self.solution_raw is None:
             raise ModelSolutionError("The solver has not yet been run!")
 
         self.t = self.solution_raw.t
         self.solution_primary = self.solution_raw.y.T
-        solution_labels = self.equations.final_solution_labels
-        self.solution = pandas.DataFrame(columns=["t"] + solution_labels, dtype=float)
-        for i, (t_i, y_i) in enumerate(zip(self.t, self.solution_primary)):
-            self.solution.loc[i, "t"] = t_i
-            self.solution.loc[
-                i, solution_labels
-            ] = self.equations.get_final_solution_values(t_i, y_i)
+        # build the final solution dataframe:
+        final_columns = ["t"] + list(self.equations.final_solution_labels)
+        final_values = np.stack(
+            [
+                np.r_[t_i, self.equations.get_final_solution_values(t_i, y_i)]
+                for t_i, y_i in zip(self.t, self.solution_primary)
+            ]
+        )
+        self.solution = pd.DataFrame(final_values, columns=final_columns)
 
     def run(
         self,
