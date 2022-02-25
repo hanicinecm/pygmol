@@ -8,9 +8,9 @@ the global model. But as the ``Equations`` class forms a heart of the model, any
 improvements of the model will need to go through the equations. Therefore this short
 introduction might benefit my future self, or any future developers of the package.
 
-The ``pygmol.abc.Equations`` is the abstract base class (ABC) to be inherited from
-(or the interface mirrored) by *concrete* equations class used by the
-global ``pygmol.model.Model``.
+With that out of the way, the ``pygmol.abc.Equations`` is the abstract base class (ABC)
+to be inherited from (or the interface mirrored) by *concrete* equations class used by
+the global ``pygmol.model.Model``.
 
 The best introduction to the interface is a dive into the
 `source code <https://github.com/hanicinecm/pygmol/blob/master/src/pygmol/abc.py>`_
@@ -108,7 +108,7 @@ model, wherever the ``run`` method is called:
     >>> type(model.equations)
     <class 'pygmol.equations.ElectronEnergyEquations'>
 
-After a successful ``Model`` run, all the state vectors *y(t)* are stored as
+After a successful ``Model.run()`` call, all the state vectors *y(t)* are stored as
 the ``solution_primary`` attribute ``numpy.ndarray``, in this case with several
 thousand rows (each for a single time step) and 25 columns (for densities of 24
 heavy species and the electron energy density):
@@ -127,7 +127,7 @@ Let us now see, how the ``equations`` object is used behind the scenes of the ``
 
     >>> equations = model.equations
 
-    >>> # the final (last) state vector:
+    >>> # the final (last) state vector from the last model run looks like this:
     >>> y = array([2.37231337e+25, 2.10846582e+15, 8.57126911e+12, 2.01183854e+13,
     ...            1.45857406e+13, 1.71508621e+21, 5.65338119e+17, 3.08500654e+16,
     ...            2.23303476e+15, 3.00187971e+16, 2.12734223e+22, 9.12458352e+20,
@@ -136,13 +136,12 @@ Let us now see, how the ``equations`` object is used behind the scenes of the ``
     ...            2.02079492e+11, 6.20627690e+15, 9.37287931e+15, 6.95883253e+13,
     ...            1.49559385e+17])
 
-    >>> # the time derivative of the final state vector, based on itself and the final
-    >>> # time t = 0.015 s
     >>> ode_rhs = equations.ode_system_rhs
-    >>> dy_over_dt = ode_rhs(t=0.015, y=y)  # this is the bit used by the solver
 
-    >>> for val in dy_over_dt:
-    >>>     # this function is never called except by the `scipy.integrate.solve_ivp`
+    >>> # the scipy solver uses this function to get the time derivative of the state
+    >>> # vector based on itself and the time t. this function is NEVER called by pygmol,
+    >>> # only by the low-lever scipy solver.
+    >>> for val in dy_over_dt = ode_rhs(t=0.015, y=y):
     ...     print(f"{val:.1e}")
     -9.8e+22
     -3.9e+16
@@ -158,6 +157,7 @@ solution values (this happens under the hood of the ``Model.run`` method):
 
 .. code-block:: pycon
 
+    >>> # the human-readable labels need to be defined by the concrete Equations:
     >>> for quantity in equations.final_solution_labels:
     ...     print(quantity)
     He
@@ -171,6 +171,7 @@ solution values (this happens under the hood of the ``Model.run`` method):
     p
     P
 
+    >>> # as well as a function generating the actual data from the state vectors:
     >>> for quantity_value in equations.get_final_solution_values(t=0.015, y=y):
     ...     print(f"{quantity_value:.1e}")
     2.4e+25
